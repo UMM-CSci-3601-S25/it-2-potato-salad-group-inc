@@ -18,7 +18,12 @@ import { Game } from '../game';
 })
 export class HomeComponent {
   constructor(private httpClient: HttpClient) {
+    const randomNumber: number = Math.random();
+    console.info(randomNumber);
+    this.defaultUsername = "Willy";
   }
+
+  defaultUsername = "Willy";
 
   createGame() {
     console.info("createGame() called");

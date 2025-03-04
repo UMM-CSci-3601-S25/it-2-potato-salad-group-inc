@@ -3,7 +3,7 @@
     <mat-card class="home-card">
       <mat-form-field>
         Username:
-        <input type="text" value="Generated Username">
+        <input type="text" [value]="defaultUsername">
       </mat-form-field>
     </mat-card>
     <mat-card class="home-card">
@@ -31,7 +31,6 @@
           <input type="text">
           <input type="submit" value="Submit">
         </mat-form-field>
-
       </mat-card-content>
     </mat-card>
   </div>

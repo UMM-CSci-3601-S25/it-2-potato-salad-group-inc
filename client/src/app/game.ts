@@ -1,10 +1,10 @@
 export interface Game {
   _id: string;
   prompt: string;
-  players: string;
-  responses: string;
+  players: string[];
+  responses: string[];
   judge: number;
-  scores: string;
+  scores: number[];
   discardLast: boolean;
   winnerBecomesJudge: boolean;
 }
