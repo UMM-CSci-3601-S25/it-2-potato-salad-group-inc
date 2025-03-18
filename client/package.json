@@ -47,7 +47,7 @@
     "@floogulinc/cypress-mongo-seeder": "^1.1.1",
     "@types/jasmine": "^5.1.6",
     "@types/node": "^22.13.4",
-    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/eslint-plugin": "^8.26.1",
     "@typescript-eslint/parser": "^8.24.1",
     "cypress": "^14.0.3",
     "eslint-plugin-import": "2.31.0",
