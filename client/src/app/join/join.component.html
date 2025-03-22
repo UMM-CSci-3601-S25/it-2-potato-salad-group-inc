@@ -5,7 +5,10 @@
         <mat-card-title class="join-title">Join</mat-card-title>
       </mat-card-header>
       <mat-card-content class="game-title">
-        This is a placeholder for the join page!
+        <div *ngIf="lobbies.length === 0">No lobbies available.</div>
+        <div *ngFor="let lobby of lobbies">
+          <p>{{ lobby.lobbyName }}</p>
+        </div>
       </mat-card-content>
     </mat-card>
   </div>
