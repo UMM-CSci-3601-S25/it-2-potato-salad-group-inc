@@ -6,9 +6,9 @@
       </mat-card-header>
       <mat-card class="home-card">
         <mat-card-content>
-          <input type="text" [(ngModel)]="joinId">
+          <input class="join-lobby" matInput type="text" [(ngModel)]="joinId">
           <a routerLink="/game/{{joinId}}">
-            <button class="">
+            <button data-test="confirmJoinLobbyButton">
               Join Game
             </button>
           </a>
