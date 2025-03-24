@@ -19,6 +19,7 @@ import { LobbyService } from './lobby.service';
 
 export class AddLobbyComponent {
 
+  joinId = "";
   addLobbyForm = new FormGroup({
     // We allow alphanumeric input and limit the length for name.
     lobbyName: new FormControl('', Validators.compose([
@@ -80,7 +81,7 @@ export class AddLobbyComponent {
           null,
           { duration: 2000 }
         );
-        this.router.navigate(['/lobbies/', newId]);
+        this.router.navigate(['/game/', newId]);
       },
       error: err => {
         if (err.status === 400) {
