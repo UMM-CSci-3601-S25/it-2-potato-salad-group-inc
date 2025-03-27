@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, DestroyRef, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MatInputModule } from '@angular/material/input';
@@ -12,6 +12,8 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { LobbyService } from '../host/lobby.service';
 
 @Component({
   selector: 'app-game-page',
@@ -46,6 +48,9 @@ export class GameComponent {
 
   constructor(
     private route: ActivatedRoute,
-    private httpClient: HttpClient
+    private httpClient: HttpClient,
+    private snackBar: MatSnackBar,
+    private destroyRef: DestroyRef,
+    private lobbyService: LobbyService
   ) {}
 }

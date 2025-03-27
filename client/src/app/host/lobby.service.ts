@@ -17,6 +17,7 @@ export class LobbyService {
   readonly lobbyUrl: string = `${environment.apiUrl}lobbies`;
 
   private readonly lobbyNameKey = 'lobbyName';
+  private readonly userIDsKey = 'userIDs';
 
   // The private `HttpClient` is *injected* into the service
   // by the Angular framework. This allows the system to create
@@ -86,7 +87,7 @@ export class LobbyService {
    * @param filters the map of key-value pairs used for the filtering
    * @returns an array of `Lobbies` matching the given filters
    */
-  filterLobbies(lobbies: Lobby[], filters: { lobbyName?: string; company?: string }): Lobby[] { // skipcq: JS-0105
+  filterLobbies(lobbies: Lobby[], filters: { lobbyName?: string}): Lobby[] { // skipcq: JS-0105
     let filteredLobbies = lobbies;
 
     // Filter by lobbyName

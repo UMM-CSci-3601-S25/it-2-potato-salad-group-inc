@@ -12,6 +12,8 @@ import { MatOptionModule } from '@angular/material/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { LobbyService } from './lobby.service';
 
 @Component({
   selector: 'app-host-component',
@@ -35,6 +37,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 
 
 export class HostComponent {
-  constructor(private router: Router) {}
+  constructor(private router: Router, private snackBar: MatSnackBar, private lobbyService: LobbyService) {}
 
 }
