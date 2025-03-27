@@ -14,6 +14,8 @@ import { MatOptionModule } from '@angular/material/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('Host', () => {
 
@@ -38,6 +40,7 @@ describe('Host', () => {
         MatFormFieldModule,
         HostComponent,
         RouterModule.forRoot([])],
+      providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
     });
 
     fixture = TestBed.createComponent(HostComponent);

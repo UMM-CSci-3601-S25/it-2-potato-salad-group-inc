@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatCardModule } from '@angular/material/card';
 import { By } from '@angular/platform-browser';
 import { JoinComponent } from './join.component';
+import { RouterModule } from '@angular/router';
 
 describe('Join', () => {
 
@@ -13,7 +14,7 @@ describe('Join', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [MatCardModule, JoinComponent],
+      imports: [MatCardModule, JoinComponent, RouterModule.forRoot([])]
     });
 
     fixture = TestBed.createComponent(JoinComponent);
@@ -27,7 +28,7 @@ describe('Join', () => {
 
   it('It has the basic Join page text', () => {
     fixture.detectChanges();
-    expect(el.textContent).toContain('This is a placeholder for the join page!');
+    expect(el.textContent).toContain('Join Game');
     expect(component).toBeTruthy();
   });
 
