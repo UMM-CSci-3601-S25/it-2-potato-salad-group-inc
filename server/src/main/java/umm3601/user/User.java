@@ -27,8 +27,8 @@ public class User {
   // name of the field as used by MongoDB.
   @SuppressWarnings({"MemberName"})
   public String _id;
-
-  public String cardIDs;
+  public String[] cardIDs;
+  public String name;
   public int role;
 
   @Override

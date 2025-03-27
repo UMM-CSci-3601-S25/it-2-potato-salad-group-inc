@@ -1,12 +1,7 @@
 package umm3601.user;
 
-import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Filters.regex;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +17,8 @@ import org.mongojack.JacksonMongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
+import static com.mongodb.client.model.Filters.regex;
+import static com.mongodb.client.model.Filters.and;
 
 import io.javalin.Javalin;
 import io.javalin.http.BadRequestResponse;
@@ -37,14 +34,10 @@ public class UserController implements Controller {
 
   private static final String API_USERS = "/api/users";
   private static final String API_USER_BY_ID = "/api/users/{id}";
-  static final String AGE_KEY = "age";
-  static final String COMPANY_KEY = "company";
-  static final String ROLE_KEY = "role";
-  static final String SORT_ORDER_KEY = "sortorder";
+  private static final String NAME_KEY = "userName";
+  static final String CARDIDS_KEY = "cardIDs";
+  static final int ROLE_KEY = 0;
 
-  private static final int REASONABLE_AGE_LIMIT = 150;
-  private static final String ROLE_REGEX = "^(admin|editor|viewer)$";
-  public static final String EMAIL_REGEX = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
 
   private final JacksonMongoCollection<User> userCollection;
 
@@ -128,26 +121,13 @@ public class UserController implements Controller {
   private Bson constructFilter(Context ctx) {
     List<Bson> filters = new ArrayList<>(); // start with an empty list of filters
 
-    if (ctx.queryParamMap().containsKey(AGE_KEY)) {
-      int targetAge = ctx.queryParamAsClass(AGE_KEY, Integer.class)
-        .check(it -> it > 0, "User's age must be greater than zero; you provided " + ctx.queryParam(AGE_KEY))
-        .check(it -> it < REASONABLE_AGE_LIMIT,
-          "User's age must be less than " + REASONABLE_AGE_LIMIT + "; you provided " + ctx.queryParam(AGE_KEY))
-        .get();
-      filters.add(eq(AGE_KEY, targetAge));
-    }
-    if (ctx.queryParamMap().containsKey(COMPANY_KEY)) {
-      Pattern pattern = Pattern.compile(Pattern.quote(ctx.queryParam(COMPANY_KEY)), Pattern.CASE_INSENSITIVE);
-      filters.add(regex(COMPANY_KEY, pattern));
-    }
-    if (ctx.queryParamMap().containsKey(ROLE_KEY)) {
-      String role = ctx.queryParamAsClass(ROLE_KEY, String.class)
-        .check(it -> it.matches(ROLE_REGEX), "User must have a legal user role")
-        .get();
-      filters.add(eq(ROLE_KEY, role));
+    if (ctx.queryParamMap().containsKey(NAME_KEY)) {
+        String targetContent = ctx.queryParam(NAME_KEY);
+        Pattern pattern = Pattern.compile(Pattern.quote(targetContent), Pattern.CASE_INSENSITIVE);
+        filters.add(regex(NAME_KEY, pattern));
     }
 
-    // Combine the list of filters into a single filtering document.
+  //   // Combine the list of filters into a single filtering document.
     Bson combinedFilter = filters.isEmpty() ? new Document() : and(filters);
 
     return combinedFilter;
@@ -172,7 +152,7 @@ public class UserController implements Controller {
     // Sort the results. Use the `sortby` query param (default "name")
     // as the field to sort by, and the query param `sortorder` (default
     // "asc") to specify the sort order.
-    String sortBy = Objects.requireNonNullElse(ctx.queryParam("sortby"), "name");
+    String sortBy = Objects.requireNonNullElse(ctx.queryParam("sortby"), "userName");
     String sortOrder = Objects.requireNonNullElse(ctx.queryParam("sortorder"), "asc");
     Bson sortingOrder = sortOrder.equals("desc") ?  Sorts.descending(sortBy) : Sorts.ascending(sortBy);
     return sortingOrder;
@@ -192,15 +172,6 @@ public class UserController implements Controller {
    *   (in either `asc` or `desc` order) or by the number of users in the
    *   company (`count`, also in either `asc` or `desc` order).
    */
-  public void getUsersGroupedByCompany(Context ctx) {
-    // We'll support sorting the results either by company name (in either `asc` or `desc` order)
-    // or by the number of users in the company (`count`, also in either `asc` or `desc` order).
-    String sortBy = Objects.requireNonNullElse(ctx.queryParam("sortBy"), "_id");
-    if (sortBy.equals("company")) {
-      sortBy = "_id";
-    }
-    String sortOrder = Objects.requireNonNullElse(ctx.queryParam("sortOrder"), "asc");
-    Bson sortingOrder = sortOrder.equals("desc") ?  Sorts.descending(sortBy) : Sorts.ascending(sortBy);
 
     // The `UserByCompany` class is a simple class that has fields for the company
     // name, the number of users in that company, and a list of user names and IDs
@@ -210,35 +181,35 @@ public class UserController implements Controller {
     // names and IDs for each user in each company. We'll then convert the results
     // of the aggregation pipeline to `UserByCompany` objects.
 
-    ArrayList<UserByCompany> matchingUsers = userCollection
-      // The following aggregation pipeline groups users by company, and
-      // then counts the number of users in each company. It also collects
-      // the user names and IDs for each user in each company.
-      .aggregate(
-        List.of(
-          // Project the fields we want to use in the next step, i.e., the _id, name, and company fields
-          new Document("$project", new Document("_id", 1).append("name", 1).append("company", 1)),
-          // Group the users by company, and count the number of users in each company
-          new Document("$group", new Document("_id", "$company")
-            // Count the number of users in each company
-            .append("count", new Document("$sum", 1))
-            // Collect the user names and IDs for each user in each company
-            .append("users", new Document("$push", new Document("_id", "$_id").append("name", "$name")))),
-          // Sort the results. Use the `sortby` query param (default "company")
-          // as the field to sort by, and the query param `sortorder` (default
-          // "asc") to specify the sort order.
-          new Document("$sort", sortingOrder)
-        ),
-        // Convert the results of the aggregation pipeline to UserGroupResult objects
-        // (i.e., a list of UserGroupResult objects). It is necessary to have a Java type
-        // to convert the results to, and the JacksonMongoCollection will do this for us.
-        UserByCompany.class
-      )
-      .into(new ArrayList<>());
+  //   ArrayList<UserByCompany> matchingUsers = userCollection
+  //     // The following aggregation pipeline groups users by company, and
+  //     // then counts the number of users in each company. It also collects
+  //     // the user names and IDs for each user in each company.
+  //     .aggregate(
+  //       List.of(
+  //         // Project the fields we want to use in the next step, i.e., the _id, name, and company fields
+  //         new Document("$project", new Document("_id", 1).append("name", 1).append("company", 1)),
+  //         // Group the users by company, and count the number of users in each company
+  //         new Document("$group", new Document("_id", "$company")
+  //           // Count the number of users in each company
+  //           .append("count", new Document("$sum", 1))
+  //           // Collect the user names and IDs for each user in each company
+  //           .append("users", new Document("$push", new Document("_id", "$_id").append("name", "$name")))),
+  //         // Sort the results. Use the `sortby` query param (default "company")
+  //         // as the field to sort by, and the query param `sortorder` (default
+  //         // "asc") to specify the sort order.
+  //         new Document("$sort", sortingOrder)
+  //       ),
+  //       // Convert the results of the aggregation pipeline to UserGroupResult objects
+  //       // (i.e., a list of UserGroupResult objects). It is necessary to have a Java type
+  //       // to convert the results to, and the JacksonMongoCollection will do this for us.
+  //       UserByCompany.class
+  //     )
+  //     .into(new ArrayList<>());
 
-    ctx.json(matchingUsers);
-    ctx.status(HttpStatus.OK);
-  }
+  //   ctx.json(matchingUsers);
+  //   ctx.status(HttpStatus.OK);
+
 
   /**
    * Add a new user using information from the context
@@ -266,33 +237,21 @@ public class UserController implements Controller {
     User newUser = ctx.bodyValidator(User.class)
       .check(usr -> usr.name != null && usr.name.length() > 0,
         "User must have a non-empty user name; body was " + body)
-      .check(usr -> usr.email.matches(EMAIL_REGEX),
-        "User must have a legal email; body was " + body)
-      .check(usr -> usr.age > 0,
-        "User's age must be greater than zero; body was " + body)
-      .check(usr -> usr.age < REASONABLE_AGE_LIMIT,
-        "User's age must be less than " + REASONABLE_AGE_LIMIT + "; body was " + body)
-      .check(usr -> usr.role.matches(ROLE_REGEX),
-        "User must have a legal user role; body was " + body)
-      .check(usr -> usr.company != null && usr.company.length() > 0,
-        "User must have a non-empty company name; body was " + body)
       .get();
 
-    // Generate a user avatar (you won't need this part for todos)
-    newUser.avatar = generateAvatar(newUser.email);
 
-    // Add the new user to the database
+    // // Add the new user to the database
     userCollection.insertOne(newUser);
 
-    // Set the JSON response to be the `_id` of the newly created user.
-    // This gives the client the opportunity to know the ID of the new user,
-    // which it can then use to perform further operations (e.g., a GET request
-    // to get and display the details of the new user).
+    // // Set the JSON response to be the `_id` of the newly created user.
+    // // This gives the client the opportunity to know the ID of the new user,
+    // // which it can then use to perform further operations (e.g., a GET request
+    // // to get and display the details of the new user).
     ctx.json(Map.of("id", newUser._id));
-    // 201 (`HttpStatus.CREATED`) is the HTTP code for when we successfully
-    // create a new resource (a user in this case).
-    // See, e.g., https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
-    // for a description of the various response codes.
+    // // 201 (`HttpStatus.CREATED`) is the HTTP code for when we successfully
+    // // create a new resource (a user in this case).
+    // // See, e.g., https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+    // // for a description of the various response codes.
     ctx.status(HttpStatus.CREATED);
   }
 
@@ -313,47 +272,6 @@ public class UserController implements Controller {
           + "; perhaps illegal ID or an ID for an item not in the system?");
     }
     ctx.status(HttpStatus.OK);
-  }
-
-  /**
-   * Utility function to generate an URI that points
-   * at a unique avatar image based on a user's email.
-   *
-   * This uses the service provided by gravatar.com; there
-   * are numerous other similar services that one could
-   * use if one wished.
-   *
-   * YOU DON'T NEED TO USE THIS FUNCTION FOR THE TODOS.
-   *
-   * @param email the email to generate an avatar for
-   * @return a URI pointing to an avatar image
-   */
-  String generateAvatar(String email) {
-    String avatar;
-    try {
-      // generate unique md5 code for identicon
-      avatar = "https://gravatar.com/avatar/" + md5(email) + "?d=identicon";
-    } catch (NoSuchAlgorithmException ignored) {
-      // set to mystery person
-      avatar = "https://gravatar.com/avatar/?d=mp";
-    }
-    return avatar;
-  }
-
-  /**
-   * Utility function to generate the md5 hash for a given string
-   *
-   * @param str the string to generate a md5 for
-   */
-  public String md5(String str) throws NoSuchAlgorithmException {
-    MessageDigest md = MessageDigest.getInstance("MD5");
-    byte[] hashInBytes = md.digest(str.toLowerCase().getBytes(StandardCharsets.UTF_8));
-
-    StringBuilder result = new StringBuilder();
-    for (byte b : hashInBytes) {
-      result.append(String.format("%02x", b));
-    }
-    return result.toString();
   }
 
   /**
@@ -391,9 +309,6 @@ public class UserController implements Controller {
 
     // List users, filtered using query parameters
     server.get(API_USERS, this::getUsers);
-
-    // Get the users, possibly filtered, grouped by company
-    server.get("/api/usersByCompany", this::getUsersGroupedByCompany);
 
     // Add new user with the user info being in the JSON body
     // of the HTTP request
