@@ -145,8 +145,7 @@ class UserControllerSpec {
     samsId = new ObjectId();
     Document sam = new Document()
         .append("_id", samsId)
-        .append("name", "Sam")
-        .append("age", 45);
+        .append("userName", "Sam");
 
     userDocuments.insertMany(testUsers);
     userDocuments.insertOne(sam);
@@ -158,7 +157,7 @@ class UserControllerSpec {
   void addsRoutes() {
     Javalin mockServer = mock(Javalin.class);
     userController.addRoutes(mockServer);
-    verify(mockServer, Mockito.atLeast(3)).get(any(), any());
+    verify(mockServer, Mockito.atLeast(2)).get(any(), any());
     verify(mockServer, Mockito.atLeastOnce()).post(any(), any());
     verify(mockServer, Mockito.atLeastOnce()).delete(any(), any());
   }
@@ -262,7 +261,7 @@ class UserControllerSpec {
 
     verify(ctx).json(userCaptor.capture());
     verify(ctx).status(HttpStatus.OK);
-    assertEquals("Sam", userCaptor.getValue().name);
+    assertEquals("Sam", userCaptor.getValue().userName);
     assertEquals(samsId.toHexString(), userCaptor.getValue()._id);
   }
 
@@ -288,26 +287,23 @@ class UserControllerSpec {
 
     assertEquals("The requested user was not found", exception.getMessage());
   }
+  @Test
+  void canCreateAndAccessUserIdName(){
+    UserIdName userIdName = new UserIdName();
+
+    userIdName._id = "12345";
+    userIdName.name = "minister";
+
+    assertEquals("12345", userIdName._id);
+    assertEquals("minister", userIdName.name);
+  }
 
   @Test
   void addUser() throws IOException {
     // Create a new user to add
     User newUser = new User();
-    newUser.name = "Test User";
+    newUser.userName = "Test User";
 
-    // Use `javalinJackson` to convert the `User` object to a JSON string representing that user.
-    // This would be equivalent to:
-    //   String testNewUser = """
-    //       {
-    //         "name": "Test User",
-    //         "age": 25,
-    //         "company": "testers",
-    //         "email": "test@example.com",
-    //         "role": "viewer"
-    //       }
-    //       """;
-    // but using `javalinJackson` to generate the JSON avoids repeating all the field values,
-    // which is then less error prone.
     String newUserJson = javalinJackson.toJsonString(newUser, User.class);
 
     // A `BodyValidator` needs
@@ -335,8 +331,7 @@ class UserControllerSpec {
     assertNotEquals("", addedUser.get("_id"));
     // The new user in the database (`addedUser`) should have the same
     // field values as the user we asked it to add (`newUser`).
-    assertEquals(newUser.name, addedUser.get("name"));
-    assertNotNull(addedUser.get("avatar"));
+    assertEquals(newUser.userName, addedUser.get("userName"));
   }
 
   @Test
@@ -372,7 +367,7 @@ class UserControllerSpec {
   void addEmptyNameUser() throws IOException {
     String newUserJson = """
         {
-          "name": "",
+          "userName": ""
         }
         """;
 

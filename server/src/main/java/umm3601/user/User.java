@@ -28,7 +28,7 @@ public class User {
   @SuppressWarnings({"MemberName"})
   public String _id;
   public String[] cardIDs;
-  public String name;
+  public String userName;
   public int role;
 
   @Override

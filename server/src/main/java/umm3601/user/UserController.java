@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 import org.bson.Document;
 import org.bson.UuidRepresentation;
@@ -17,8 +16,6 @@ import org.mongojack.JacksonMongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
-import static com.mongodb.client.model.Filters.regex;
-import static com.mongodb.client.model.Filters.and;
 
 import io.javalin.Javalin;
 import io.javalin.http.BadRequestResponse;
@@ -34,7 +31,7 @@ public class UserController implements Controller {
 
   private static final String API_USERS = "/api/users";
   private static final String API_USER_BY_ID = "/api/users/{id}";
-  private static final String NAME_KEY = "userName";
+  // private static final String NAME_KEY = "userName";
   static final String CARDIDS_KEY = "cardIDs";
   static final int ROLE_KEY = 0;
 
@@ -121,14 +118,10 @@ public class UserController implements Controller {
   private Bson constructFilter(Context ctx) {
     List<Bson> filters = new ArrayList<>(); // start with an empty list of filters
 
-    if (ctx.queryParamMap().containsKey(NAME_KEY)) {
-        String targetContent = ctx.queryParam(NAME_KEY);
-        Pattern pattern = Pattern.compile(Pattern.quote(targetContent), Pattern.CASE_INSENSITIVE);
-        filters.add(regex(NAME_KEY, pattern));
-    }
+
 
   //   // Combine the list of filters into a single filtering document.
-    Bson combinedFilter = filters.isEmpty() ? new Document() : and(filters);
+    Bson combinedFilter = new Document();
 
     return combinedFilter;
   }
@@ -154,7 +147,7 @@ public class UserController implements Controller {
     // "asc") to specify the sort order.
     String sortBy = Objects.requireNonNullElse(ctx.queryParam("sortby"), "userName");
     String sortOrder = Objects.requireNonNullElse(ctx.queryParam("sortorder"), "asc");
-    Bson sortingOrder = sortOrder.equals("desc") ?  Sorts.descending(sortBy) : Sorts.ascending(sortBy);
+    Bson sortingOrder = Sorts.ascending(sortBy);
     return sortingOrder;
   }
 
@@ -235,7 +228,7 @@ public class UserController implements Controller {
      */
     String body = ctx.body();
     User newUser = ctx.bodyValidator(User.class)
-      .check(usr -> usr.name != null && usr.name.length() > 0,
+      .check(usr -> usr.userName != null && usr.userName.length() > 0,
         "User must have a non-empty user name; body was " + body)
       .get();
 
