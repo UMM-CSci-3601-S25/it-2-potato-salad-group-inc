@@ -54,20 +54,16 @@ public class CardController implements Controller{
     } else {
       ctx.json(card);
     }
+    ctx.status(HttpStatus.OK);
   }
 
   public void getCards(Context ctx) {
     List<Bson> filters = new ArrayList<>();
-    if (ctx.queryParamMap().containsKey(DESCRIPTION_KEY)) {
-      filters.add(regex(DESCRIPTION_KEY, Pattern.quote(ctx.queryParam(DESCRIPTION_KEY)), "i"));
-    }
-    if (ctx.queryParamMap().containsKey(TITLE_KEY)) {
-      filters.add(regex(TITLE_KEY, Pattern.quote(ctx.queryParam(TITLE_KEY)), "i"));
-    }
 
-    Bson filter = filters.isEmpty() ? new Document() : and(filters);
+    Bson filter = new Document() ;
 
     ctx.json(cardCollection.find(filter).into(new ArrayList<>()));
+    ctx.status(HttpStatus.OK);
   }
 
   public void addNewCard(Context ctx) {
@@ -93,7 +89,7 @@ public class CardController implements Controller{
 
   @Override
   public void addRoutes(Javalin server) {
-    server.get(API_CARDS, this::getCards);
+    // server.get(API_CARDS, this::getCards);
     server.get(API_CARDS_ID, this::getCard);
     server.post(API_CARDS, this::addNewCard);
     server.delete(API_CARDS_ID, this::deleteCard);
