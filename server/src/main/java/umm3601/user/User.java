@@ -30,6 +30,7 @@ public class User {
   public String[] cardIDs;
   public String userName;
   public int role;
+  public int score;
 
   @Override
   public boolean equals(Object obj) {

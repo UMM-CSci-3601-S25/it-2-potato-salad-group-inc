@@ -2,6 +2,7 @@ package umm3601.card;
 
 import static com.mongodb.client.model.Filters.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -212,10 +213,11 @@ class CardControllerSpec {
     verify(ctx).status(HttpStatus.NOT_FOUND);
   }
   @Test
-void addCardWithoutTitleOrDescription() throws IOException {
+void addCardWithoutDescription() throws IOException {
   // JSON for a card with no title or description
   String invalidCardJson = """
       {
+        "Title": "door"
       }
       """;
 
@@ -232,7 +234,140 @@ void addCardWithoutTitleOrDescription() throws IOException {
 
   // Verify the exception message contains the validation error details
   String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
-  assertTrue(exceptionMessage.contains("Title cannot be empty"));
   assertTrue(exceptionMessage.contains("Description cannot be empty"));
+}
+
+@Test
+void addCardWithoutTitle() throws IOException {
+  String invalidCardJson = """
+      {
+        "Description": "door"
+      }
+      """;
+  when(ctx.body()).thenReturn(invalidCardJson);
+  when(ctx.bodyValidator(Card.class))
+      .then(value -> new BodyValidator<>(invalidCardJson, Card.class,
+          () -> javalinJackson.fromJsonString(invalidCardJson, Card.class)));
+  ValidationException exception = assertThrows(ValidationException.class, () -> {
+    cardController.addNewCard(ctx);
+  });
+  String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
+  assertTrue(exceptionMessage.contains("Title cannot be empty"));
+}
+
+@Test
+void addCardWithTitleLengthZero() throws IOException {
+  String invalidCardJson = """
+      {
+        "Title": "",
+        "Description": "door"
+      }
+      """;
+  when(ctx.body()).thenReturn(invalidCardJson);
+  when(ctx.bodyValidator(Card.class))
+      .then(value -> new BodyValidator<>(invalidCardJson, Card.class,
+          () -> javalinJackson.fromJsonString(invalidCardJson, Card.class)));
+  ValidationException exception = assertThrows(ValidationException.class, () -> {
+    cardController.addNewCard(ctx);
+  });
+  String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
+  assertTrue(exceptionMessage.contains("Title cannot be empty"));
+}
+
+@Test
+void addCardWithDescriptionLengthZero() throws IOException {
+  // JSON for a card with no title or description
+  String invalidCardJson = """
+      {
+        "Title": "door",
+        "Description": ""
+      }
+      """;
+
+  // Mock the body of the request to return the invalid JSON
+  when(ctx.body()).thenReturn(invalidCardJson);
+  when(ctx.bodyValidator(Card.class))
+      .then(value -> new BodyValidator<>(invalidCardJson, Card.class,
+          () -> javalinJackson.fromJsonString(invalidCardJson, Card.class)));
+
+  // Expect a ValidationException to be thrown
+  ValidationException exception = assertThrows(ValidationException.class, () -> {
+    cardController.addNewCard(ctx);
+  });
+
+  // Verify the exception message contains the validation error details
+  String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
+  assertTrue(exceptionMessage.contains("Description cannot be empty"));
+}
+
+@Test
+  void testEqualsWithSameId() {
+    Card card1 = new Card();
+    card1._id = "12345";
+    Card card2 = new Card();
+    card2._id = "12345";
+
+    assertTrue(card1.equals(card2), "Cards with the same _id should be equal");
+  }
+
+  @Test
+  void testEqualsWithDifferentId() {
+    Card card1 = new Card();
+    card1._id = "12345";
+    Card card2 = new Card();
+    card2._id = "67890";
+
+    assertFalse(card1.equals(card2), "Cards with different _id should not be equal");
+  }
+
+  @Test
+  void testEqualsWithNull() {
+    Card card = new Card();
+    card._id = "12345";
+
+    assertFalse(card.equals(null), "Card should not be equal to null");
+  }
+
+  @Test
+  void testEqualsWithDifferentType() {
+    Card card = new Card();
+    card._id = "12345";
+
+    String otherObject = "Not a Card";
+
+    assertFalse(card.equals(otherObject), "Card should not be equal to an object of a different type");
+  }
+
+  @Test
+void testHashCode() {
+  Card card1 = new Card();
+  card1._id = "12345";
+  Card card2 = new Card();
+  card2._id = "12345";
+
+  // Cards with the same _id should have the same hash code
+  assertEquals(card1.hashCode(), card2.hashCode(), "Cards with the same _id should have the same hash code");
+
+  Card card3 = new Card();
+  card3._id = "67890";
+
+  // Cards with different _id should have different hash codes
+  assertFalse(card1.hashCode() == card3.hashCode(), "Cards with different _id should have different hash codes");
+}
+
+@Test
+void testCardIdNameFields() {
+  // Create an instance of CardIdName
+  CardIdName cardIdName = new CardIdName();
+
+  // Set the fields
+  cardIdName._id = "12345";
+  cardIdName.Title = "Test Title";
+  cardIdName.Description = "Test Description";
+
+  // Verify the fields are set correctly
+  assertEquals("12345", cardIdName._id, "The _id field should match the set value");
+  assertEquals("Test Title", cardIdName.Title, "The Title field should match the set value");
+  assertEquals("Test Description", cardIdName.Description, "The Description field should match the set value");
 }
 }
