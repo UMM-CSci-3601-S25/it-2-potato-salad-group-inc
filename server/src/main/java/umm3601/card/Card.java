@@ -1,4 +1,4 @@
-package umm3601.user;
+package umm3601.card;
 
 import org.mongojack.Id;
 import org.mongojack.ObjectId;
@@ -19,7 +19,7 @@ import org.mongojack.ObjectId;
 // check in CheckStyle so that we don't get a failed
 // build when Gradle runs CheckStyle.
 @SuppressWarnings({"VisibilityModifier"})
-public class User {
+public class Card {
 
   @ObjectId @Id
   // By default Java field names shouldn't start with underscores.
@@ -27,17 +27,15 @@ public class User {
   // name of the field as used by MongoDB.
   @SuppressWarnings({"MemberName"})
   public String _id;
-  public String[] cardIDs;
-  public String userName;
-  public int role;
-  public int score;
+  public String Title;
+  public String Description;
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof User)) {
+    if (!(obj instanceof Card)) {
       return false;
     }
-    User other = (User) obj;
+    Card other = (Card) obj;
     return _id.equals(other._id);
   }
 

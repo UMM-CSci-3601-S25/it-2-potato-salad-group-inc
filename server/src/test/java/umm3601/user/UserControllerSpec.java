@@ -7,20 +7,20 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+// import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
+// import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+// import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+// import java.util.stream.Collectors;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
+// import org.mockito.ArgumentMatcher;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -51,10 +51,10 @@ import io.javalin.http.HttpStatus;
 import io.javalin.http.NotFoundResponse;
 import io.javalin.json.JavalinJackson;
 import io.javalin.validation.BodyValidator;
-import io.javalin.validation.Validation;
-import io.javalin.validation.ValidationError;
+// import io.javalin.validation.Validation;
+// import io.javalin.validation.ValidationError;
 import io.javalin.validation.ValidationException;
-import io.javalin.validation.Validator;
+// import io.javalin.validation.Validator;
 
 /**
  * Tests the logic of the UserController
@@ -137,41 +137,15 @@ class UserControllerSpec {
     // Setup database
     MongoCollection<Document> userDocuments = db.getCollection("users");
     userDocuments.drop();
-    List<Document> testUsers = new ArrayList<>();
-    testUsers.add(
-        new Document()
-            .append("name", "Chris")
-            .append("age", 25)
-            .append("company", "UMM")
-            .append("email", "chris@this.that")
-            .append("role", "admin")
-            .append("avatar", "https://gravatar.com/avatar/8c9616d6cc5de638ea6920fb5d65fc6c?d=identicon"));
-    testUsers.add(
-        new Document()
-            .append("name", "Pat")
-            .append("age", 37)
-            .append("company", "IBM")
-            .append("email", "pat@something.com")
-            .append("role", "editor")
-            .append("avatar", "https://gravatar.com/avatar/b42a11826c3bde672bce7e06ad729d44?d=identicon"));
-    testUsers.add(
-        new Document()
-            .append("name", "Jamie")
-            .append("age", 37)
-            .append("company", "OHMNET")
-            .append("email", "jamie@frogs.com")
-            .append("role", "viewer")
-            .append("avatar", "https://gravatar.com/avatar/d4a6c71dd9470ad4cf58f78c100258bf?d=identicon"));
+    List<Document> testUsers = List.of(
+        new Document().append("userName", "Chris"),
+        new Document().append("userName", "Pat"),
+        new Document().append("userName", "Jamie"));
 
     samsId = new ObjectId();
     Document sam = new Document()
         .append("_id", samsId)
-        .append("name", "Sam")
-        .append("age", 45)
-        .append("company", "OHMNET")
-        .append("email", "sam@frogs.com")
-        .append("role", "viewer")
-        .append("avatar", "https://gravatar.com/avatar/08b7610b558a4cbbd20ae99072801f4d?d=identicon");
+        .append("userName", "Sam");
 
     userDocuments.insertMany(testUsers);
     userDocuments.insertOne(sam);
@@ -183,7 +157,7 @@ class UserControllerSpec {
   void addsRoutes() {
     Javalin mockServer = mock(Javalin.class);
     userController.addRoutes(mockServer);
-    verify(mockServer, Mockito.atLeast(3)).get(any(), any());
+    verify(mockServer, Mockito.atLeast(2)).get(any(), any());
     verify(mockServer, Mockito.atLeastOnce()).post(any(), any());
     verify(mockServer, Mockito.atLeastOnce()).delete(any(), any());
   }
@@ -255,58 +229,7 @@ class UserControllerSpec {
    *
    * @throws IOException
    */
-  @Test
-  void canGetUsersWithAge37() throws IOException {
-    // We'll need both `String` and `Integer` representations of
-    // the target age, so I'm defining both here.
-    Integer targetAge = 37;
-    String targetAgeString = targetAge.toString();
 
-    // Create a `Map` for the `queryParams` that will "return" the string
-    // "37" if you ask for the value associated with the `AGE_KEY`.
-    Map<String, List<String>> queryParams = new HashMap<>();
-
-    queryParams.put(UserController.AGE_KEY, Arrays.asList(new String[] {targetAgeString}));
-    // When the code being tested calls `ctx.queryParamMap()` return the
-    // the `queryParams` map we just built.
-    when(ctx.queryParamMap()).thenReturn(queryParams);
-    // When the code being tested calls `ctx.queryParam(AGE_KEY)` return the
-    // `targetAgeString`.
-    when(ctx.queryParam(UserController.AGE_KEY)).thenReturn(targetAgeString);
-
-    // Create a validator that confirms that when we ask for the value associated with
-    // `AGE_KEY` _as an integer_, we get back the integer value 37.
-    Validation validation = new Validation();
-    // The `AGE_KEY` should be name of the key whose value is being validated.
-    // You can actually put whatever you want here, because it's only used in the generation
-    // of testing error reports, but using the actually key value will make those reports more informative.
-    Validator<Integer> validator = validation.validator(UserController.AGE_KEY, Integer.class, targetAgeString);
-    // When the code being tested calls `ctx.queryParamAsClass("age", Integer.class)`
-    // we'll return the `Validator` we just constructed.
-    when(ctx.queryParamAsClass(UserController.AGE_KEY, Integer.class))
-        .thenReturn(validator);
-
-    userController.getUsers(ctx);
-
-    // Confirm that the code being tested calls `ctx.json(…)`, and capture whatever
-    // is passed in as the argument when `ctx.json()` is called.
-    verify(ctx).json(userArrayListCaptor.capture());
-    // Confirm that the code under test calls `ctx.status(HttpStatus.OK)` is called.
-    verify(ctx).status(HttpStatus.OK);
-
-    // Confirm that we get back two users.
-    assertEquals(2, userArrayListCaptor.getValue().size());
-    // Confirm that both users have age 37.
-    for (User user : userArrayListCaptor.getValue()) {
-      assertEquals(targetAge, user.age);
-    }
-    // Generate a list of the names of the returned users.
-    List<String> names = userArrayListCaptor.getValue().stream().map(user -> user.name).collect(Collectors.toList());
-    // Confirm that the returned `names` contain the two names of the
-    // 37-year-olds.
-    assertTrue(names.contains("Jamie"));
-    assertTrue(names.contains("Pat"));
-  }
 
   /**
    * Confirm that if we process a request for users with age 37,
@@ -327,259 +250,7 @@ class UserControllerSpec {
    * @throws JsonMappingException
    * @throws JsonProcessingException
    */
-  @Test
-  void canGetUsersWithAge37Redux() throws JsonMappingException, JsonProcessingException {
-    // We'll need both `String` and `Integer` representations of
-    // the target age, so I'm defining both here.
-    Integer targetAge = 37;
-    String targetAgeString = targetAge.toString();
 
-    // When the controller calls `ctx.queryParamMap`, return the expected map for an
-    // "?age=37" query.
-    when(ctx.queryParamMap()).thenReturn(Map.of(UserController.AGE_KEY, List.of(targetAgeString)));
-    // When the code being tested calls `ctx.queryParam(AGE_KEY)` return the
-    // `targetAgeString`.
-    when(ctx.queryParam(UserController.AGE_KEY)).thenReturn(targetAgeString);
-
-    // Create a validator that confirms that when we ask for the value associated with
-    // `AGE_KEY` _as an integer_, we get back the integer value 37.
-    Validation validation = new Validation();
-    // The `AGE_KEY` should be name of the key whose value is being validated.
-    // You can actually put whatever you want here, because it's only used in the generation
-    // of testing error reports, but using the actually key value will make those reports more informative.
-    Validator<Integer> validator = validation.validator(UserController.AGE_KEY, Integer.class, targetAgeString);
-    when(ctx.queryParamAsClass(UserController.AGE_KEY, Integer.class)).thenReturn(validator);
-
-    // Call the method under test.
-    userController.getUsers(ctx);
-
-    // Verify that `getUsers` included a call to `ctx.status(HttpStatus.OK)` at some
-    // point.
-    verify(ctx).status(HttpStatus.OK);
-
-    // Verify that `ctx.json()` is called with a `List` of `User`s.
-    // Each of those `User`s should have age 37.
-    verify(ctx).json(argThat(new ArgumentMatcher<List<User>>() {
-      @Override
-      public boolean matches(List<User> users) {
-        for (User user : users) {
-          assertEquals(targetAge, user.age);
-        }
-        assertEquals(2, users.size());
-        return true;
-      }
-    }));
-  }
-
-  /**
-   * Test that if the user sends a request with an illegal value in
-   * the age field (i.e., something that can't be parsed to a number)
-   * we get a reasonable error back.
-   */
-  @Test
-  void respondsAppropriatelyToNonNumericAge() {
-    Map<String, List<String>> queryParams = new HashMap<>();
-    String illegalIntegerString = "bad integer string";
-    queryParams.put(UserController.AGE_KEY, Arrays.asList(new String[] {illegalIntegerString}));
-    when(ctx.queryParamMap()).thenReturn(queryParams);
-    // When the code being tested calls `ctx.queryParam(AGE_KEY)` return the
-    // `illegalIntegerString`.
-    when(ctx.queryParam(UserController.AGE_KEY)).thenReturn(illegalIntegerString);
-
-    // Create a validator that confirms that when we ask for the value associated with
-    // `AGE_KEY` _as an integer_, we get back the `illegalIntegerString`.
-    Validation validation = new Validation();
-    // The `AGE_KEY` should be name of the key whose value is being validated.
-    // You can actually put whatever you want here, because it's only used in the generation
-    // of testing error reports, but using the actually key value will make those reports more informative.
-    Validator<Integer> validator = validation.validator(UserController.AGE_KEY, Integer.class, illegalIntegerString);
-    when(ctx.queryParamAsClass(UserController.AGE_KEY, Integer.class)).thenReturn(validator);
-
-    // This should now throw a `ValidationException` because
-    // our request has an age that can't be parsed to a number.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      userController.getUsers(ctx);
-    });
-    // This digs into the returned `ValidationException` to get the underlying `Exception` that caused
-    // the validation to fail:
-    //   - `exception.getErrors` returns a `Map` that maps keys (like `AGE_KEY`) to lists of
-    //      validation errors for that key
-    //   - `.get(AGE_KEY)` returns a list of all the validation errors associated with `AGE_KEY`
-    //   - `.get(0)` assumes that the root cause is the first error in the list. In our case there
-    //     is only one root cause,
-    //     so that's safe, but you might be careful about that assumption in other contexts.
-    //   - `.exception()` gets the actually `Exception` value that was the underlying cause
-    Exception exceptionCause = exception.getErrors().get(UserController.AGE_KEY).get(0).exception();
-    // The cause should have been a `NumberFormatException` (what is thrown when we try to parse "bad" as an integer).
-    assertEquals(NumberFormatException.class, exceptionCause.getClass());
-    // The message for that `NumberFOrmatException` should include the text it tried to parse as an integer,
-    // i.e., `"bad integer string"`.
-    assertTrue(exceptionCause.getMessage().contains(illegalIntegerString));
-  }
-
-  /**
-   * Test that if the user sends a request with an illegal value in
-   * the age field (i.e., too big of a number)
-   * we get a reasonable error code back.
-   */
-  @Test
-  void respondsAppropriatelyToTooLargeNumberAge() {
-    Map<String, List<String>> queryParams = new HashMap<>();
-    String overlyLargeAgeString = "151";
-    queryParams.put(UserController.AGE_KEY, Arrays.asList(new String[] {overlyLargeAgeString}));
-    when(ctx.queryParamMap()).thenReturn(queryParams);
-    // When the code being tested calls `ctx.queryParam(AGE_KEY)` return the
-    // `overlyLargeAgeString`.
-    when(ctx.queryParam(UserController.AGE_KEY)).thenReturn(overlyLargeAgeString);
-
-    // Create a validator that confirms that when we ask for the value associated with
-    // `AGE_KEY` _as an integer_, we get back the integer value 37.
-    Validation validation = new Validation();
-    // The `AGE_KEY` should be name of the key whose value is being validated.
-    // You can actually put whatever you want here, because it's only used in the generation
-    // of testing error reports, but using the actually key value will make those reports more informative.
-    Validator<Integer> validator = validation.validator(UserController.AGE_KEY, Integer.class, overlyLargeAgeString);
-    when(ctx.queryParamAsClass(UserController.AGE_KEY, Integer.class)).thenReturn(validator);
-
-    // This should now throw a `ValidationException` because
-    // our request has an age that is larger than 150, which isn't allowed.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      userController.getUsers(ctx);
-    });
-    // This `ValidationException` was caused by a custom check, so we just get the message from the first
-    // error and confirm that it contains the problematic string, since that would be useful information
-    // for someone trying to debug a case where this validation fails.
-    String exceptionMessage = exception.getErrors().get(UserController.AGE_KEY).get(0).getMessage();
-    // The message should be the message from our code under test, which should include the text we
-    // tried to parse as an age, namely "151".
-    assertTrue(exceptionMessage.contains(overlyLargeAgeString));
-  }
-
-  /**
-   * Test that if the user sends a request with an illegal value in
-   * the age field (i.e., too small of a number)
-   * we get a reasonable error code back.
-   */
-  @Test
-  void respondsAppropriatelyToTooSmallNumberAge() {
-    Map<String, List<String>> queryParams = new HashMap<>();
-    String negativeAgeString = "-1";
-    queryParams.put(UserController.AGE_KEY, Arrays.asList(new String[] {negativeAgeString}));
-    when(ctx.queryParamMap()).thenReturn(queryParams);
-    // When the code being tested calls `ctx.queryParam(AGE_KEY)` return the
-    // `negativeAgeString`.
-    when(ctx.queryParam(UserController.AGE_KEY)).thenReturn(negativeAgeString);
-
-    // Create a validator that confirms that when we ask for the value associated with
-    // `AGE_KEY` _as an integer_, we get back the string value `negativeAgeString`.
-    Validation validation = new Validation();
-    // The `AGE_KEY` should be name of the key whose value is being validated.
-    // You can actually put whatever you want here, because it's only used in the generation
-    // of testing error reports, but using the actually key value will make those reports more informative.
-    Validator<Integer> validator = validation.validator(UserController.AGE_KEY, Integer.class, negativeAgeString);
-    when(ctx.queryParamAsClass(UserController.AGE_KEY, Integer.class)).thenReturn(validator);
-
-    // This should now throw a `ValidationException` because
-    // our request has an age that is larger than 150, which isn't allowed.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      userController.getUsers(ctx);
-    });
-    // This `ValidationException` was caused by a custom check, so we just get the message from the first
-    // error and confirm that it contains the problematic string, since that would be useful information
-    // for someone trying to debug a case where this validation fails.
-    String exceptionMessage = exception.getErrors().get(UserController.AGE_KEY).get(0).getMessage();
-    // The message should be the message from our code under test, which should include the text we
-    // tried to parse as an age, namely "-1".
-    assertTrue(exceptionMessage.contains(negativeAgeString));
-  }
-
-  @Test
-  void canGetUsersWithCompany() throws IOException {
-    Map<String, List<String>> queryParams = new HashMap<>();
-    queryParams.put(UserController.COMPANY_KEY, Arrays.asList(new String[] {"OHMNET"}));
-    queryParams.put(UserController.SORT_ORDER_KEY, Arrays.asList(new String[] {"desc"}));
-    when(ctx.queryParamMap()).thenReturn(queryParams);
-    when(ctx.queryParam(UserController.COMPANY_KEY)).thenReturn("OHMNET");
-    when(ctx.queryParam(UserController.SORT_ORDER_KEY)).thenReturn("desc");
-
-    userController.getUsers(ctx);
-
-    verify(ctx).json(userArrayListCaptor.capture());
-    verify(ctx).status(HttpStatus.OK);
-
-    // Confirm that all the users passed to `json` work for OHMNET.
-    for (User user : userArrayListCaptor.getValue()) {
-      assertEquals("OHMNET", user.company);
-    }
-  }
-
-  @Test
-  void canGetUsersWithCompanyLowercase() throws IOException {
-    Map<String, List<String>> queryParams = new HashMap<>();
-    queryParams.put(UserController.COMPANY_KEY, Arrays.asList(new String[] {"ohm"}));
-    when(ctx.queryParamMap()).thenReturn(queryParams);
-    when(ctx.queryParam(UserController.COMPANY_KEY)).thenReturn("ohm");
-
-    userController.getUsers(ctx);
-
-    verify(ctx).json(userArrayListCaptor.capture());
-    verify(ctx).status(HttpStatus.OK);
-
-    // Confirm that all the users passed to `json` work for OHMNET.
-    for (User user : userArrayListCaptor.getValue()) {
-      assertEquals("OHMNET", user.company);
-    }
-  }
-
-  @Test
-  void getUsersByRole() throws IOException {
-    Map<String, List<String>> queryParams = new HashMap<>();
-    String roleString = "viewer";
-    queryParams.put(UserController.ROLE_KEY, Arrays.asList(new String[] {roleString}));
-    when(ctx.queryParamMap()).thenReturn(queryParams);
-
-    // Create a validator that confirms that when we ask for the value associated with
-    // `ROLE_KEY` we get back a string that represents a legal role.
-    Validation validation = new Validation();
-    Validator<String> validator = validation.validator(UserController.ROLE_KEY, String.class, roleString);
-    when(ctx.queryParamAsClass(UserController.ROLE_KEY, String.class)).thenReturn(validator);
-
-    userController.getUsers(ctx);
-
-    verify(ctx).json(userArrayListCaptor.capture());
-    verify(ctx).status(HttpStatus.OK);
-    assertEquals(2, userArrayListCaptor.getValue().size());
-  }
-
-  @Test
-  void getUsersByCompanyAndAge() throws IOException {
-    String targetCompanyString = "OHMNET";
-    Integer targetAge = 37;
-    String targetAgeString = targetAge.toString();
-
-    Map<String, List<String>> queryParams = new HashMap<>();
-    queryParams.put(UserController.COMPANY_KEY, Arrays.asList(new String[] {targetCompanyString}));
-    queryParams.put(UserController.AGE_KEY, Arrays.asList(new String[] {targetAgeString}));
-    when(ctx.queryParamMap()).thenReturn(queryParams);
-    when(ctx.queryParam(UserController.COMPANY_KEY)).thenReturn(targetCompanyString);
-
-    // Create a validator that confirms that when we ask for the value associated with
-    // `AGE_KEY` _as an integer_, we get back the integer value 37.
-    Validation validation = new Validation();
-    Validator<Integer> validator = validation.validator(UserController.AGE_KEY, Integer.class, targetAgeString);
-    when(ctx.queryParamAsClass(UserController.AGE_KEY, Integer.class)).thenReturn(validator);
-    when(ctx.queryParam(UserController.AGE_KEY)).thenReturn(targetAgeString);
-
-    userController.getUsers(ctx);
-
-    verify(ctx).json(userArrayListCaptor.capture());
-    verify(ctx).status(HttpStatus.OK);
-    assertEquals(1, userArrayListCaptor.getValue().size());
-    for (User user : userArrayListCaptor.getValue()) {
-      assertEquals(targetCompanyString, user.company);
-      assertEquals(targetAge, user.age);
-    }
-  }
 
   @Test
   void getUserWithExistentId() throws IOException {
@@ -590,7 +261,7 @@ class UserControllerSpec {
 
     verify(ctx).json(userCaptor.capture());
     verify(ctx).status(HttpStatus.OK);
-    assertEquals("Sam", userCaptor.getValue().name);
+    assertEquals("Sam", userCaptor.getValue().userName);
     assertEquals(samsId.toHexString(), userCaptor.getValue()._id);
   }
 
@@ -616,136 +287,23 @@ class UserControllerSpec {
 
     assertEquals("The requested user was not found", exception.getMessage());
   }
-
-  @Captor
-  private ArgumentCaptor<ArrayList<UserByCompany>> userByCompanyListCaptor;
-
   @Test
-  void testGetUsersGroupedByCompany() {
-    when(ctx.queryParam("sortBy")).thenReturn("company");
-    when(ctx.queryParam("sortOrder")).thenReturn("asc");
-    userController.getUsersGroupedByCompany(ctx);
+  void canCreateAndAccessUserIdName(){
+    UserIdName userIdName = new UserIdName();
 
-    // Capture the argument to `ctx.json()`
-    verify(ctx).json(userByCompanyListCaptor.capture());
+    userIdName._id = "12345";
+    userIdName.name = "minister";
 
-    // Get the value that was passed to `ctx.json()`
-    ArrayList<UserByCompany> result = userByCompanyListCaptor.getValue();
-
-    // There are 3 companies in the test data, so we should have 3 entries in the
-    // result.
-    assertEquals(3, result.size());
-
-    // The companies should be in alphabetical order by company name,
-    // and with user counts of 1, 2, and 1, respectively.
-    UserByCompany ibm = result.get(0);
-    assertEquals("IBM", ibm._id);
-    assertEquals(1, ibm.count);
-    UserByCompany ohmnet = result.get(1);
-    assertEquals("OHMNET", ohmnet._id);
-    assertEquals(2, ohmnet.count);
-    UserByCompany umm = result.get(2);
-    assertEquals("UMM", umm._id);
-    assertEquals(1, umm.count);
-
-    // The users for OHMNET should be Jamie and Sam, although we don't
-    // know what order they'll be in.
-    assertEquals(2, ohmnet.users.size());
-    assertTrue(ohmnet.users.get(0).name.equals("Jamie") || ohmnet.users.get(0).name.equals("Sam"),
-        "First user should have name 'Jamie' or 'Sam'");
-    assertTrue(ohmnet.users.get(1).name.equals("Jamie") || ohmnet.users.get(1).name.equals("Sam"),
-        "Second user should have name 'Jamie' or 'Sam'");
-  }
-
-  @Test
-  void testGetUsersGroupedByCompanyDescending() {
-    when(ctx.queryParam("sortBy")).thenReturn("company");
-    when(ctx.queryParam("sortOrder")).thenReturn("desc");
-    userController.getUsersGroupedByCompany(ctx);
-
-    // Capture the argument to `ctx.json()`
-    verify(ctx).json(userByCompanyListCaptor.capture());
-
-    // Get the value that was passed to `ctx.json()`
-    ArrayList<UserByCompany> result = userByCompanyListCaptor.getValue();
-
-    // There are 3 companies in the test data, so we should have 3 entries in the
-    // result.
-    assertEquals(3, result.size());
-
-    // The companies should be in reverse alphabetical order by company name,
-    // and with user counts of 1, 2, and 1, respectively.
-    UserByCompany umm = result.get(0);
-    assertEquals("UMM", umm._id);
-    assertEquals(1, umm.count);
-    UserByCompany ohmnet = result.get(1);
-    assertEquals("OHMNET", ohmnet._id);
-    assertEquals(2, ohmnet.count);
-    UserByCompany ibm = result.get(2);
-    assertEquals("IBM", ibm._id);
-    assertEquals(1, ibm.count);
-  }
-
-  @Test
-  void testGetUsersGroupedByCompanyOrderedByCount() {
-    when(ctx.queryParam("sortBy")).thenReturn("count");
-    when(ctx.queryParam("sortOrder")).thenReturn("asc");
-    userController.getUsersGroupedByCompany(ctx);
-
-    // Capture the argument to `ctx.json()`
-    verify(ctx).json(userByCompanyListCaptor.capture());
-
-    // Get the value that was passed to `ctx.json()`
-    ArrayList<UserByCompany> result = userByCompanyListCaptor.getValue();
-
-    // There are 3 companies in the test data, so we should have 3 entries in the
-    // result.
-    assertEquals(3, result.size());
-
-    // The companies should be in order by user count, and with counts of 1, 1, and
-    // 2,
-    // respectively. We don't know which order "IBM" and "UMM" will be in, since
-    // they
-    // both have a count of 1. So we'll get them both and then swap them if
-    // necessary.
-    UserByCompany ibm = result.get(0);
-    UserByCompany umm = result.get(1);
-    if (ibm._id.equals("UMM")) {
-      umm = result.get(0);
-      ibm = result.get(1);
-    }
-    UserByCompany ohmnet = result.get(2);
-    assertEquals("IBM", ibm._id);
-    assertEquals(1, ibm.count);
-    assertEquals("UMM", umm._id);
-    assertEquals(1, umm.count);
-    assertEquals("OHMNET", ohmnet._id);
-    assertEquals(2, ohmnet.count);
+    assertEquals("12345", userIdName._id);
+    assertEquals("minister", userIdName.name);
   }
 
   @Test
   void addUser() throws IOException {
     // Create a new user to add
     User newUser = new User();
-    newUser.name = "Test User";
-    newUser.age = 25;
-    newUser.company = "testers";
-    newUser.email = "test@example.com";
-    newUser.role = "viewer";
+    newUser.userName = "Test User";
 
-    // Use `javalinJackson` to convert the `User` object to a JSON string representing that user.
-    // This would be equivalent to:
-    //   String testNewUser = """
-    //       {
-    //         "name": "Test User",
-    //         "age": 25,
-    //         "company": "testers",
-    //         "email": "test@example.com",
-    //         "role": "viewer"
-    //       }
-    //       """;
-    // but using `javalinJackson` to generate the JSON avoids repeating all the field values,
-    // which is then less error prone.
     String newUserJson = javalinJackson.toJsonString(newUser, User.class);
 
     // A `BodyValidator` needs
@@ -773,161 +331,14 @@ class UserControllerSpec {
     assertNotEquals("", addedUser.get("_id"));
     // The new user in the database (`addedUser`) should have the same
     // field values as the user we asked it to add (`newUser`).
-    assertEquals(newUser.name, addedUser.get("name"));
-    assertEquals(newUser.age, addedUser.get(UserController.AGE_KEY));
-    assertEquals(newUser.company, addedUser.get(UserController.COMPANY_KEY));
-    assertEquals(newUser.email, addedUser.get("email"));
-    assertEquals(newUser.role, addedUser.get(UserController.ROLE_KEY));
-    assertNotNull(addedUser.get("avatar"));
-  }
-
-  @Test
-  void addInvalidEmailUser() throws IOException {
-    // Create a new user JSON string to add.
-    // Note that it has an invalid string for the email address, which is
-    // why we're using a `String` here instead of a `User` object
-    // like we did in the previous tests.
-    String newUserJson = """
-      {
-        "name": "Test User",
-        "age": 25,
-        "company": "testers",
-        "email": "invalidemail",
-        "role": "viewer"
-      }
-      """;
-
-    when(ctx.body()).thenReturn(newUserJson);
-    when(ctx.bodyValidator(User.class))
-      .thenReturn(new BodyValidator<User>(newUserJson, User.class,
-                    () -> javalinJackson.fromJsonString(newUserJson, User.class)));
-
-    // This should now throw a `ValidationException` because
-    // the JSON for our new user has an invalid email address.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      userController.addNewUser(ctx);
-    });
-
-    // This `ValidationException` was caused by a custom check, so we just get the message from the first
-    // error (which is a `"REQUEST_BODY"` error) and convert that to a string with `toString()`. This gives
-    // a `String` that has all the details of the exception, which we can make sure contains information
-    // that would help a developer sort out validation errors.
-    String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
-
-    // The message should be the message from our code under test, which should also include the text
-    // we tried to parse as an email, namely "invalidemail".
-    assertTrue(exceptionMessage.contains("invalidemail"));
-  }
-
-  @Test
-  void addInvalidAgeUser() throws IOException {
-    // Create a new user JSON string to add.
-    // Note that it has a string for the age that can't be parsed to a number.
-    String newUserJson = """
-      {
-        "name": "Test User",
-        "age": "notanumber",
-        "company": "testers",
-        "email": "test@example.com",
-        "role": "viewer"
-      }
-      """;
-
-    when(ctx.body()).thenReturn(newUserJson);
-    when(ctx.bodyValidator(User.class))
-        .thenReturn(new BodyValidator<User>(newUserJson, User.class,
-                      () -> javalinJackson.fromJsonString(newUserJson, User.class)));
-
-    // This should now throw a `ValidationException` because
-    // the JSON for our new user has an invalid email address.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      userController.addNewUser(ctx);
-    });
-    // This `ValidationException` was caused by a custom check, so we just get the message from the first
-    // error (which is a `"REQUEST_BODY"` error) and convert that to a string with `toString()`. This gives
-    // a `String` that has all the details of the exception, which we can make sure contains information
-    // that would help a developer sort out validation errors.
-    String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
-
-    // The message should be the message from our code under test, which should also include the text
-    // we tried to parse as an email, namely "notanumber".
-    assertTrue(exceptionMessage.contains("notanumber"));
-  }
-
-  @Test
-  void addNegativeAgeUser() throws IOException {
-    String newUserJson = """
-        {
-          "name": "Test User",
-          "age": -17,
-          "company": "testers",
-          "email": "test@example.com",
-          "role": "viewer"
-        }
-        """;
-
-    when(ctx.body()).thenReturn(newUserJson);
-    when(ctx.bodyValidator(User.class))
-        .thenReturn(new BodyValidator<User>(newUserJson, User.class,
-                      () -> javalinJackson.fromJsonString(newUserJson, User.class)));
-
-    // This should now throw a `ValidationException` because
-    // the JSON for our new user has an age that's too large.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      userController.addNewUser(ctx);
-    });
-    // This `ValidationException` was caused by a custom check, so we just get the message from the first
-    // error (which is a `"REQUEST_BODY"` error) and convert that to a string with `toString()`. This gives
-    // a `String` that has all the details of the exception, which we can make sure contains information
-    // that would help a developer sort out validation errors.
-    String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
-
-    // The message should be the message from our code under test, which should also include the text
-    // we tried to use as an age, namely "-17".
-    assertTrue(exceptionMessage.contains("-17"));
-  }
-
-  @Test
-  void add150AgeUser() throws IOException {
-    String newUserJson = """
-        {
-          "name": "Test User",
-          "age": 150,
-          "company": "testers",
-          "email": "test@example.com",
-          "role": "viewer"
-        }
-        """;
-
-    when(ctx.body()).thenReturn(newUserJson);
-    when(ctx.bodyValidator(User.class))
-        .then(value -> new BodyValidator<User>(newUserJson, User.class,
-                        () -> javalinJackson.fromJsonString(newUserJson, User.class)));
-
-    // This should now throw a `ValidationException` because
-    // the JSON for our new user has an invalid email address.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      userController.addNewUser(ctx);
-    });
-    // This `ValidationException` was caused by a custom check, so we just get the message from the first
-    // error (which is a `"REQUEST_BODY"` error) and convert that to a string with `toString()`. This gives
-    // a `String` that has all the details of the exception, which we can make sure contains information
-    // that would help a developer sort out validation errors.
-    String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
-
-    // The message should be the message from our code under test, which should also include the text
-    // we tried to use as an age, namely "150".
-    assertTrue(exceptionMessage.contains("150"));
+    assertEquals(newUser.userName, addedUser.get("userName"));
   }
 
   @Test
   void addUserWithoutName() throws IOException {
     String newUserJson = """
         {
-          "age": 25,
-          "company": "testers",
-          "email": "test@example.com",
-          "role": "viewer"
+
         }
         """;
 
@@ -956,11 +367,7 @@ class UserControllerSpec {
   void addEmptyNameUser() throws IOException {
     String newUserJson = """
         {
-          "name": "",
-          "age": 25,
-          "company": "testers",
-          "email": "test@example.com",
-          "role": "viewer"
+          "userName": ""
         }
         """;
 
@@ -983,108 +390,6 @@ class UserControllerSpec {
     // The message should be the message from our code under test, which should also include some text
     // indicating that there was an empty string for the user name.
     assertTrue(exceptionMessage.contains("non-empty user name"));
-  }
-
-  @Test
-  void addInvalidRoleUser() throws IOException {
-    String newUserJson = """
-        {
-          "name": "Test User",
-          "age": 25,
-          "company": "testers",
-          "email": "test@example.com",
-          "role": "invalidrole"
-        }
-        """;
-
-    when(ctx.body()).thenReturn(newUserJson);
-    when(ctx.bodyValidator(User.class))
-        .then(value -> new BodyValidator<User>(newUserJson, User.class,
-                        () -> javalinJackson.fromJsonString(newUserJson, User.class)));
-
-    // This should now throw a `ValidationException` because
-    // the JSON for our new user has an invalid user role.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      userController.addNewUser(ctx);
-    });
-    // This `ValidationException` was caused by a custom check, so we just get the message from the first
-    // error (which is a `"REQUEST_BODY"` error) and convert that to a string with `toString()`. This gives
-    // a `String` that has all the details of the exception, which we can make sure contains information
-    // that would help a developer sort out validation errors.
-    String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
-
-    // The message should be the message from our code under test, which should also include the text
-    // we tried to use as a role, namely "invalidrole".
-    assertTrue(exceptionMessage.contains("invalidrole"));
-  }
-
-  @Test
-  void addUserWithoutCompany() throws IOException {
-    String newUserJson = """
-        {
-          "name": "Test User",
-          "age": 25,
-          "email": "test@example.com",
-          "role": "viewer"
-        }
-        """;
-
-    when(ctx.body()).thenReturn(newUserJson);
-    when(ctx.bodyValidator(User.class))
-        .then(value -> new BodyValidator<User>(newUserJson, User.class,
-                        () -> javalinJackson.fromJsonString(newUserJson, User.class)));
-
-    // This should now throw a `ValidationException` because
-    // the JSON for our new user has no company.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      userController.addNewUser(ctx);
-    });
-    // This `ValidationException` was caused by a custom check, so we just get the message from the first
-    // error (which is a `"REQUEST_BODY"` error) and convert that to a string with `toString()`. This gives
-    // a `String` that has all the details of the exception, which we can make sure contains information
-    // that would help a developer sort out validation errors.
-    String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
-
-    // The message should be the message from our code under test, which should also include some text
-    // indicating that there was a missing company name.
-    assertTrue(exceptionMessage.contains("non-empty company name"));
-  }
-
-  @Test
-  void addUserWithNeitherCompanyNorName() throws IOException {
-    String newUserJson = """
-        {
-          "name": "",
-          "age": 25,
-          "company": "",
-          "email": "test@example.com",
-          "role": "viewer"
-        }
-        """;
-
-    when(ctx.body()).thenReturn(newUserJson);
-    when(ctx.bodyValidator(User.class))
-        .then(value -> new BodyValidator<User>(newUserJson, User.class,
-                        () -> javalinJackson.fromJsonString(newUserJson, User.class)));
-
-    // This should now throw a `ValidationException` because
-    // the JSON for our new user has an invalid email address.
-    ValidationException exception = assertThrows(ValidationException.class, () -> {
-      userController.addNewUser(ctx);
-    });
-    // We should have _two_ errors here both of type `REQUEST_BODY`. The first should be for the
-    // missing name and the second for the missing company.
-    List<ValidationError<Object>> errors = exception.getErrors().get("REQUEST_BODY");
-
-    // Check the user name error
-    // It's a little fragile to have the tests assume the user error is first and the
-    // company error is second.
-    String nameExceptionMessage = errors.get(0).toString();
-    assertTrue(nameExceptionMessage.contains("non-empty user name"));
-
-    // Check the company name error
-    String companyExceptionMessage = errors.get(1).toString();
-    assertTrue(companyExceptionMessage.contains("non-empty company name"));
   }
 
   @Test
@@ -1120,67 +425,5 @@ class UserControllerSpec {
 
     // User is still not in the database
     assertEquals(0, db.getCollection("users").countDocuments(eq("_id", new ObjectId(testID))));
-  }
-
-  /**
-   * Test that the `generateAvatar` method works as expected.
-   *
-   * To test this code, we need to mock out the `md5()` method so we
-   * can control what it returns. This way we don't have to figure
-   * out what the actual md5 hash of a particular email address is.
-   *
-   * The use of `Mockito.spy()` essentially allows us to override
-   * the `md5()` method, while leaving the rest of the user controller
-   * "as is". This is a nice way to test a method that depends on
-   * an internal method that we don't want to test (`md5()` in this case).
-   *
-   * This code was suggested by GitHub CoPilot.
-   *
-   * @throws NoSuchAlgorithmException
-   */
-  @Test
-  void testGenerateAvatar() throws NoSuchAlgorithmException {
-    // Arrange
-    String email = "test@example.com";
-    UserController controller = Mockito.spy(userController);
-    when(controller.md5(email)).thenReturn("md5hash");
-
-    // Act
-    String avatar = controller.generateAvatar(email);
-
-    // Assert
-    assertEquals("https://gravatar.com/avatar/md5hash?d=identicon", avatar);
-  }
-
-  /**
-   * Test that the `generateAvatar` throws a `NoSuchAlgorithmException`
-   * if it can't find the `md5` hashing algorithm.
-   *
-   * To test this code, we need to mock out the `md5()` method so we
-   * can control what it returns. In particular, we want `.md5()` to
-   * throw a `NoSuchAlgorithmException`, which we can't do without
-   * mocking `.md5()` (since the algorithm does actually exist).
-   *
-   * The use of `Mockito.spy()` essentially allows us to override
-   * the `md5()` method, while leaving the rest of the user controller
-   * "as is". This is a nice way to test a method that depends on
-   * an internal method that we don't want to test (`md5()` in this case).
-   *
-   * This code was suggested by GitHub CoPilot.
-   *
-   * @throws NoSuchAlgorithmException
-   */
-  @Test
-  void testGenerateAvatarWithException() throws NoSuchAlgorithmException {
-    // Arrange
-    String email = "test@example.com";
-    UserController controller = Mockito.spy(userController);
-    when(controller.md5(email)).thenThrow(NoSuchAlgorithmException.class);
-
-    // Act
-    String avatar = controller.generateAvatar(email);
-
-    // Assert
-    assertEquals("https://gravatar.com/avatar/?d=mp", avatar);
   }
 }
