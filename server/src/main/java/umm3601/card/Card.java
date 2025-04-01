@@ -7,7 +7,7 @@ import org.mongojack.ObjectId;
 // warnings in this class. If you create new classes
 // that mirror data in MongoDB and that will be managed
 // by MongoJack, then you'll probably need to suppress
-// the same warnings in your classes as well so that
+// the same warnings in your classes as well so thatDescription
 // CheckStyle doesn't shout at you and cause the build
 // to fail.
 
@@ -27,8 +27,8 @@ public class Card {
   // name of the field as used by MongoDB.
   @SuppressWarnings({"MemberName"})
   public String _id;
-  public String Title;
-  public String Description;
+  public String title;
+  public String description;
 
   @Override
   public boolean equals(Object obj) {

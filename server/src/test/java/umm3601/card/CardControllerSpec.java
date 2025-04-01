@@ -91,14 +91,14 @@ class CardControllerSpec {
     MongoCollection<Document> cardDocuments = db.getCollection("cards");
     cardDocuments.drop();
     List<Document> testCards = List.of(
-        new Document().append("Title", "Card 1").append("Description", "Description 1"),
-        new Document().append("Title", "Card 2").append("Description", "Description 2"));
+        new Document().append("title", "Card 1").append("description", "description 1"),
+        new Document().append("title", "Card 2").append("description", "description 2"));
 
     testCardId = new ObjectId();
     Document testCard = new Document()
         .append("_id", testCardId)
-        .append("Title", "Test Card")
-        .append("Description", "Test Description");
+        .append("title", "Test Card")
+        .append("description", "Test description");
 
     cardDocuments.insertMany(testCards);
     cardDocuments.insertOne(testCard);
@@ -138,8 +138,8 @@ class CardControllerSpec {
 
     verify(ctx).json(cardCaptor.capture());
     verify(ctx).status(HttpStatus.OK);
-    assertEquals("Test Card", cardCaptor.getValue().Title);
-    assertEquals("Test Description", cardCaptor.getValue().Description);
+    assertEquals("Test Card", cardCaptor.getValue().title);
+    assertEquals("Test description", cardCaptor.getValue().description);
   }
 
   @Test
@@ -168,8 +168,8 @@ class CardControllerSpec {
   @Test
   void addCard() throws IOException {
     Card newCard = new Card();
-    newCard.Title = "New Card";
-    newCard.Description = "New Description";
+    newCard.title = "New Card";
+    newCard.description = "New description";
 
     String newCardJson = javalinJackson.toJsonString(newCard, Card.class);
 
@@ -185,8 +185,8 @@ class CardControllerSpec {
         .find(eq("_id", new ObjectId(mapCaptor.getValue().get("id")))).first();
 
     assertNotNull(addedCard);
-    assertEquals(newCard.Title, addedCard.get("Title"));
-    assertEquals(newCard.Description, addedCard.get("Description"));
+    assertEquals(newCard.title, addedCard.get("title"));
+    assertEquals(newCard.description, addedCard.get("description"));
   }
 
   @Test
@@ -217,7 +217,7 @@ void addCardWithoutDescription() throws IOException {
   // JSON for a card with no title or description
   String invalidCardJson = """
       {
-        "Title": "door"
+        "title": "door"
       }
       """;
 
@@ -234,14 +234,14 @@ void addCardWithoutDescription() throws IOException {
 
   // Verify the exception message contains the validation error details
   String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
-  assertTrue(exceptionMessage.contains("Description cannot be empty"));
+  assertTrue(exceptionMessage.contains("description cannot be empty"));
 }
 
 @Test
 void addCardWithoutTitle() throws IOException {
   String invalidCardJson = """
       {
-        "Description": "door"
+        "description": "door"
       }
       """;
   when(ctx.body()).thenReturn(invalidCardJson);
@@ -252,15 +252,15 @@ void addCardWithoutTitle() throws IOException {
     cardController.addNewCard(ctx);
   });
   String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
-  assertTrue(exceptionMessage.contains("Title cannot be empty"));
+  assertTrue(exceptionMessage.contains("title cannot be empty"));
 }
 
 @Test
 void addCardWithTitleLengthZero() throws IOException {
   String invalidCardJson = """
       {
-        "Title": "",
-        "Description": "door"
+        "title": "",
+        "description": "door"
       }
       """;
   when(ctx.body()).thenReturn(invalidCardJson);
@@ -271,7 +271,7 @@ void addCardWithTitleLengthZero() throws IOException {
     cardController.addNewCard(ctx);
   });
   String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
-  assertTrue(exceptionMessage.contains("Title cannot be empty"));
+  assertTrue(exceptionMessage.contains("title cannot be empty"));
 }
 
 @Test
@@ -279,8 +279,8 @@ void addCardWithDescriptionLengthZero() throws IOException {
   // JSON for a card with no title or description
   String invalidCardJson = """
       {
-        "Title": "door",
-        "Description": ""
+        "title": "door",
+        "description": ""
       }
       """;
 
@@ -297,7 +297,7 @@ void addCardWithDescriptionLengthZero() throws IOException {
 
   // Verify the exception message contains the validation error details
   String exceptionMessage = exception.getErrors().get("REQUEST_BODY").get(0).toString();
-  assertTrue(exceptionMessage.contains("Description cannot be empty"));
+  assertTrue(exceptionMessage.contains("description cannot be empty"));
 }
 
 @Test
@@ -362,12 +362,12 @@ void testCardIdNameFields() {
 
   // Set the fields
   cardIdName._id = "12345";
-  cardIdName.Title = "Test Title";
-  cardIdName.Description = "Test Description";
+  cardIdName.title = "Test title";
+  cardIdName.description = "Test description";
 
   // Verify the fields are set correctly
   assertEquals("12345", cardIdName._id, "The _id field should match the set value");
-  assertEquals("Test Title", cardIdName.Title, "The Title field should match the set value");
-  assertEquals("Test Description", cardIdName.Description, "The Description field should match the set value");
+  assertEquals("Test title", cardIdName.title, "The title field should match the set value");
+  assertEquals("Test description", cardIdName.description, "The description field should match the set value");
 }
 }

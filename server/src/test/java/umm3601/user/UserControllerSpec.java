@@ -3,7 +3,6 @@ package umm3601.user;
 import static com.mongodb.client.model.Filters.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,8 +34,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoClient;
@@ -288,7 +285,7 @@ class UserControllerSpec {
     assertEquals("The requested user was not found", exception.getMessage());
   }
   @Test
-  void canCreateAndAccessUserIdName(){
+  void canCreateAndAccessUserIdName() {
     UserIdName userIdName = new UserIdName();
 
     userIdName._id = "12345";

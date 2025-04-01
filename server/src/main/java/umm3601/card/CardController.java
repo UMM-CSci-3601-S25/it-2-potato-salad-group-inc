@@ -3,7 +3,6 @@ package umm3601.card;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.bson.Document;
 import org.bson.UuidRepresentation;
@@ -12,9 +11,7 @@ import org.bson.types.ObjectId;
 import org.mongojack.JacksonMongoCollection;
 
 import com.mongodb.client.MongoDatabase;
-import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Filters.regex;
 import com.mongodb.client.result.DeleteResult;
 
 import io.javalin.Javalin;
@@ -24,11 +21,11 @@ import io.javalin.http.HttpStatus;
 import io.javalin.http.NotFoundResponse;
 import umm3601.Controller;
 
-public class CardController implements Controller{
+public class CardController implements Controller {
   private static final String API_CARDS = "/api/cards";
   private static final String API_CARDS_ID = "/api/cards/:id";
-  private static final String DESCRIPTION_KEY = "Description";
-  private static final String TITLE_KEY = "Title";
+  private static final String DESCRIPTION_KEY = "description";
+  private static final String TITLE_KEY = "title";
 
   private final JacksonMongoCollection<Card> cardCollection;
 
@@ -46,7 +43,7 @@ public class CardController implements Controller{
 
     try {
       card = cardCollection.find(eq("_id", new ObjectId(id))).first();
-    } catch(IllegalArgumentException e) {
+    } catch (IllegalArgumentException e) {
       throw new BadRequestResponse("The requested card id wasn't a legal Mongo Object ID.");
     }
     if (card == null) {
@@ -60,7 +57,7 @@ public class CardController implements Controller{
   public void getCards(Context ctx) {
     List<Bson> filters = new ArrayList<>();
 
-    Bson filter = new Document() ;
+    Bson filter = new Document();
 
     ctx.json(cardCollection.find(filter).into(new ArrayList<>()));
     ctx.status(HttpStatus.OK);
@@ -68,8 +65,8 @@ public class CardController implements Controller{
 
   public void addNewCard(Context ctx) {
     Card newCard = ctx.bodyValidator(Card.class)
-      .check(card -> card.Title != null && card.Title.length() > 0, "Title cannot be empty")
-      .check(card -> card.Description != null && card.Description.length() > 0, "Description cannot be empty")
+      .check(card -> card.title != null && card.title.length() > 0, "title cannot be empty")
+      .check(card -> card.description != null && card.description.length() > 0, "description cannot be empty")
       .get();
 
     cardCollection.insertOne(newCard);
