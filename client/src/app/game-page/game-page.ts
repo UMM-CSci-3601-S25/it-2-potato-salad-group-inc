@@ -43,6 +43,12 @@ export class GameComponent {
     this.httpClient.put<Game>('/api/game/submit', {prompt: this.submission});
   }
 
+  round = signal(0);
+
+  incrementRound() {
+    this.round.update((round) => round + 1);
+  }
+
   submission = "";
   username = "Steady Roosevelt";
 

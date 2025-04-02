@@ -8,6 +8,10 @@
     </mat-card>
     <ul class="player-list">
     </ul>
+    <div class="round-counter">
+      <h2>Round: {{ round() }}</h2>
+      <button (click)="incrementRound()">Next Round</button>
+    </div>
    <h1 style="margin: 0 5%">{{game().prompt}}</h1>
    <ul style="display: flex"><li>strip</li><li>Bear</li><li>dARTH</li><li>the loraks</li><li>bbig</li></ul>
    <ul style="float: right; width: 25%; color: green"><li>1 KK</li><li>2 Haider</li><li>0 James</li><li>1 Elliott</li><li>5 not the lorax [JUDGE]</li><li>3 teddy</li></ul>
