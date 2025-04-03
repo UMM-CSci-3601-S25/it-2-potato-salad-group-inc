@@ -18,11 +18,13 @@ export class MockLobbyService extends LobbyService {
       _id: 'lobby1_id',
       userIDs: ["Bruh"],
       lobbyName: 'Cards Against Humanity',
+      round: 0,
     },
     {
       _id: 'lobby2_id',
       userIDs: ["Bruh"],
       lobbyName: 'Apples to Apples',
+      round: 0,
     }
   ];
 

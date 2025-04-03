@@ -34,6 +34,7 @@ public class LobbyController implements Controller {
   private static final String API_LOBBIES = "/api/lobbies";
   private static final String API_LOBBY_BY_ID = "/api/lobbies/{id}";
   static final String NAME_KEY = "lobbyName";
+  static final String ROUND_KEY = "round";
   static final String SORT_ORDER_KEY = "sortorder";
   static final String USERS_KEY = "users";
 
@@ -122,6 +123,12 @@ public class LobbyController implements Controller {
       String targetContent = ctx.queryParam(NAME_KEY);
       Pattern pattern = Pattern.compile(targetContent, Pattern.CASE_INSENSITIVE);
       filters.add(regex("lobbyName", pattern));
+    }
+    if (ctx.queryParamMap().containsKey(ROUND_KEY)) {
+      int targetContent = ctx.queryParamAsClass(ROUND_KEY, Integer.class)
+      .check(it -> it == 0, "Lobby round must be at 0 when starting! You provided " + ctx.queryParam(ROUND_KEY))
+      .get();
+      filters.add(eq(ROUND_KEY, targetContent));
     }
 
     // Combine the list of filters into a single filtering document.
@@ -247,8 +254,8 @@ public class LobbyController implements Controller {
     Lobby newLobby = ctx.bodyValidator(Lobby.class)
       .check(lobby -> lobby.lobbyName != null && lobby.lobbyName.length() > 0,
         "Lobby must have a non-empty lobby name; body was " + body)
+      .check(lobby -> lobby.round == 0, "Lobby round must be at 0 when starting! You provided: " + ctx.queryParam(ROUND_KEY))
       .get();
-
 
     // Add the new lobby to the database
     lobbyCollection.insertOne(newLobby);
@@ -283,7 +290,6 @@ public class LobbyController implements Controller {
     }
     ctx.status(HttpStatus.OK);
   }
-
 
 
   /**

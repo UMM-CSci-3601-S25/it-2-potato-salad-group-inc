@@ -38,6 +38,7 @@ export class AddLobbyComponent {
         }
       },
     ])),
+    round: new FormControl(0, Validators.compose([Validators.required])),
   });
 
 
@@ -49,6 +50,9 @@ export class AddLobbyComponent {
       {type: 'minlength', message: 'Name must be at least 2 characters long'},
       {type: 'maxlength', message: 'Name cannot be more than 50 characters long'},
       {type: 'existingName', message: 'Name has already been taken'}
+    ],
+    round: [
+      {type: 'required', message: 'Round Count must exist'},
     ]
   };
 
@@ -77,7 +81,7 @@ export class AddLobbyComponent {
       next: (newId) => {
         console.log(newId);
         this.snackBar.open(
-          `Added lobby ${this.addLobbyForm.value.lobbyName}`,
+          `Added lobby ${this.addLobbyForm.value.round}`,
           null,
           { duration: 2000 }
         );

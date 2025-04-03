@@ -12,16 +12,19 @@ describe('LobbyService', () => {
       _id: 'lobbyID_1',
       lobbyName: 'CardsAgainstCows',
       userIDs: ['hi', 'goddbye'],
+      round: 0,
     },
     {
       _id: 'lobbyID_2',
       lobbyName: 'CardsAgainstCows',
       userIDs: ['hdbnfhi', 'goddbye'],
+      round: 0,
     },
     {
       _id: 'lobbyID_3',
       lobbyName: 'CardsAgainstFrogs',
       userIDs: ['hi', 'goddbye'],
+      round: 0,
     }
   ];
   let lobbyService: LobbyService;
