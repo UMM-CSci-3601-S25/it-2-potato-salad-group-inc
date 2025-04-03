@@ -1,4 +1,4 @@
-import { Component, DestroyRef, signal } from '@angular/core';
+import { Component, DestroyRef, signal, OnInit } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { MatInputModule } from '@angular/material/input';
@@ -21,7 +21,9 @@ import { LobbyService } from '../host/lobby.service';
   providers: [],
   imports: [MatCardModule, MatInputModule, MatFormFieldModule, MatSelectModule, FormsModule, MatCheckboxModule]
 })
-export class GameComponent {
+export class GameComponent implements OnInit {
+  round: number = 0;
+  lobbyId: string = this.route.snapshot.params['id']; // Replace with actual lobby ID
   game = toSignal(
     this.route.paramMap.pipe(
       // Map the paramMap into the id
@@ -38,11 +40,6 @@ export class GameComponent {
     ));
   error = signal({help: '', httpResponse: '', message: ''});
 
-  round = signal(1);
-
-  incrementRound() {
-    this.round.update((round) => round + 1);
-  }
 
   submission = "";
   username = "Steady Roosevelt";
@@ -54,4 +51,22 @@ export class GameComponent {
     private destroyRef: DestroyRef,
     private lobbyService: LobbyService
   ) {}
+
+  ngOnInit() {
+    this.fetchRound();
+  }
+
+  fetchRound() {
+    this.lobbyService.getLobbyRound(this.lobbyId).subscribe({
+      next: (round) => this.round = round,
+      error: (err) => console.error('Failed to fetch round:', err)
+    });
+  }
+
+  incrementRound() {
+    this.lobbyService.incrementLobbyRound(this.lobbyId).subscribe({
+      next: (round) => this.round = round,
+      error: (err) => console.error('Failed to increment round:', err)
+    });
+  }
 }

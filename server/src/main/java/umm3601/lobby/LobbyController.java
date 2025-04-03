@@ -137,6 +137,31 @@ public class LobbyController implements Controller {
     return combinedFilter;
   }
 
+  public void getLobbyRound(Context ctx) {
+    String id = ctx.pathParam("id");
+    Lobby lobby = lobbyCollection.find(eq("_id", new ObjectId(id))).first();
+    if (lobby == null) {
+      throw new NotFoundResponse("Lobby not found");
+    }
+
+    ctx.json(Map.of("round", lobby.round));
+    ctx.status(HttpStatus.OK);
+  }
+
+  public void incrementLobbyRound(Context ctx) {
+    String id = ctx.pathParam("id");
+    Lobby lobby = lobbyCollection.find(eq("_id", new ObjectId(id))).first();
+    if (lobby == null) {
+      throw new NotFoundResponse("Lobby not found");
+    }
+
+    // Increment the round number
+    lobby.round++;
+    lobbyCollection.replaceOne(eq("_id", new ObjectId(id)), lobby);
+
+    ctx.json(Map.of("round", lobby.round));
+    ctx.status(HttpStatus.OK);
+  }
   /**
    * Construct a Bson sorting document to use in the `sort` method based on the
    * query parameters from the context.
@@ -324,6 +349,12 @@ public class LobbyController implements Controller {
   public void addRoutes(Javalin server) {
     // Get the specified lobby
     server.get(API_LOBBY_BY_ID, this::getLobby);
+
+    // Get the round number for the specified lobby
+    server.get("/api/lobbies/{id}/round", this::getLobbyRound);
+
+    // Increment the round number for the specified lobby
+    server.post("/api/lobbies/{id}/round/increment", this::incrementLobbyRound);
 
     // List lobbies, filtered using query parameters
     server.get(API_LOBBIES, this::getLobbies);
