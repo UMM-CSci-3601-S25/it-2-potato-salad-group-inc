@@ -6,8 +6,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { LobbyService } from '../host/lobby.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
 import { WebSocketService } from '../game-page/web-socket.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-join',
@@ -20,11 +20,10 @@ import { WebSocketService } from '../game-page/web-socket.service';
       MatInputModule,
       MatButtonModule
     ],
-  templateUrl: './join.component.html',
-  styleUrl: './join.component.scss'
+  templateUrl: './host-join.component.html',
+  styleUrl: './host-join.component.scss'
 })
-export class JoinComponent {
-
+export class HostJoinComponent {
   userForm = new FormGroup({
     // We allow alphanumeric input and limit the length for a lobby id.
     userName: new FormControl('', Validators.compose([
@@ -74,7 +73,7 @@ export class JoinComponent {
           null,
           { duration: 5000 }
         );
-        this.router.navigate(['/specify/', newId]);
+        this.router.navigate(['host/new', newId]);
       },
       error: err => {
         if (err.status === 400) {

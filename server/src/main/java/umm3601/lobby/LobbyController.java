@@ -17,6 +17,7 @@ import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.regex;
 import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 
 import io.javalin.Javalin;
@@ -33,6 +34,7 @@ public class LobbyController implements Controller {
 
   private static final String API_LOBBIES = "/api/lobbies";
   private static final String API_LOBBY_BY_ID = "/api/lobbies/{id}";
+  private static final String API_LOBBY_BY_USERIDs = "/api/lobbies/{id}/{userIDs}";
   static final String NAME_KEY = "lobbyName";
   static final String ROUND_KEY = "round";
   static final String SORT_ORDER_KEY = "sortorder";
@@ -161,6 +163,38 @@ public class LobbyController implements Controller {
 
     ctx.json(Map.of("round", lobby.round));
     ctx.status(HttpStatus.OK);
+  }
+
+   /**
+   * Add a player string to the array of players for the game
+   * (as long as the information gives "legal" values to Game fields)
+   *
+   * @param ctx a Javalin HTTP context that provides the game info
+   *  in the JSON body of the request
+   */
+  public void addPlayerToGame(Context ctx) {
+    String id = ctx.pathParam("id");
+    String newPlayer = ctx.pathParam("userIDs");
+    Lobby lobbyToUpdate;
+    try {
+      lobbyToUpdate = lobbyCollection.findOneById(id);
+    } catch (IllegalArgumentException e) {
+      throw new BadRequestResponse("The requested game id wasn't a legal Mongo Object ID.");
+    }
+    if (lobbyToUpdate == null) {
+      throw new NotFoundResponse("The requested game was not found");
+    } else {
+      // Updates.addToSet documentation can be found here:
+      // https://www.mongodb.com/docs/manual/reference/operator/update/addToSet/
+      if (lobbyToUpdate.userIDs == null) {
+        lobbyCollection.updateById(id, Updates.set("userIDs", new String[]{newPlayer}));
+      } else {
+        lobbyCollection.updateById(id, Updates.addToSet("userIDs", newPlayer));
+      }
+      lobbyToUpdate = lobbyCollection.findOneById(id);
+      ctx.json(lobbyToUpdate);
+      ctx.status(HttpStatus.OK);
+    }
   }
   /**
    * Construct a Bson sorting document to use in the `sort` method based on the
@@ -364,6 +398,10 @@ public class LobbyController implements Controller {
 
     // Add new lobby with the lobby info being in the JSON body
     // of the HTTP request
+
+    server.put(API_LOBBY_BY_USERIDs, this::addPlayerToGame);
+
+
     server.post(API_LOBBIES, this::addNewLobby);
 
 
