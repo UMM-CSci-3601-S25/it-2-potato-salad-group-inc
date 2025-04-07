@@ -279,7 +279,8 @@ public class LobbyController implements Controller {
     Lobby newLobby = ctx.bodyValidator(Lobby.class)
       .check(lobby -> lobby.lobbyName != null && lobby.lobbyName.length() > 0,
         "Lobby must have a non-empty lobby name; body was " + body)
-      .check(lobby -> lobby.round == 0, "Lobby round must be at 0 when starting! You provided: " + ctx.queryParam(ROUND_KEY))
+      .check(lobby -> lobby.round == 0, "Lobby round must be at 0 when starting! You provided: "
+       + ctx.queryParam(ROUND_KEY))
       .get();
 
     // Add the new lobby to the database

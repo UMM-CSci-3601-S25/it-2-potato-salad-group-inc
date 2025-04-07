@@ -278,7 +278,6 @@ public class LobbyControllerSpec {
     for (int i = 0; i < newLobby.userIDs.length; i++) {
       if (i == 0) {
           compareUserIDs += newLobby.userIDs[i];
-
       } else {
         compareUserIDs += ", " + newLobby.userIDs[i];
       }
@@ -383,8 +382,7 @@ public class LobbyControllerSpec {
   }
 
   @Test
-  void tryToGetRound() throws IOException
-  {
+  void tryToGetRound() throws IOException {
     String testID = appleId.toHexString();
     when(ctx.pathParam("id")).thenReturn(testID);
     lobbyController.getLobbyRound(ctx);
@@ -394,8 +392,7 @@ public class LobbyControllerSpec {
   }
 
   @Test
-  void tryToGetRoundWithNonExistantID() throws IOException
-  {
+  void tryToGetRoundWithNonExistantID() throws IOException {
     String id = "588935f5c668650dc77df581";
     when(ctx.pathParam("id")).thenReturn(id);
 
@@ -407,8 +404,7 @@ public class LobbyControllerSpec {
   }
 
   @Test
-  void incrementLobbyRoundWithExistingID() throws IOException
-  {
+  void incrementLobbyRoundWithExistingID() throws IOException {
     String testID = appleId.toHexString();
     when(ctx.pathParam("id")).thenReturn(testID);
     lobbyController.incrementLobbyRound(ctx);
@@ -418,8 +414,7 @@ public class LobbyControllerSpec {
   }
 
   @Test
-  void incrementLobbyRoundWithNonExistantID() throws IOException
-  {
+  void incrementLobbyRoundWithNonExistantID() throws IOException {
     String id = "588935f5c668650dc77df581";
     when(ctx.pathParam("id")).thenReturn(id);
 
