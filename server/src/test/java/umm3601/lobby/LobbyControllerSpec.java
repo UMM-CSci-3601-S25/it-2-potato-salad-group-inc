@@ -74,6 +74,9 @@ public class LobbyControllerSpec {
   @Captor
   private ArgumentCaptor<Map<String, String>> mapCaptor;
 
+  @Captor
+  private ArgumentCaptor<Integer> roundCaptor;
+
   /**
    * Sets up (the connection to the) DB once; that connection and DB will
    * then be (re)used for all the tests, and closed in the `teardown()`
@@ -114,24 +117,28 @@ public class LobbyControllerSpec {
     testLobbies.add(
       new Document()
       .append("lobbyName", "Channel Orange")
-      .append("lobbyIDs", null));
+      .append("lobbyIDs", null)
+      .append("round", 0));
 
     testLobbies.add(
       new Document()
       .append("lobbyName", "You Will Never Know Why")
-      .append("lobbyIDs", null));
+      .append("lobbyIDs", null)
+      .append("round", 0));
 
     testLobbies.add(
       new Document()
       .append("lobbyName", "Imaginal Disk")
-      .append("lobbyIDs", null));
+      .append("lobbyIDs", null)
+      .append("round", 0));
 
 
     appleId = new ObjectId();
     Document apple = new Document()
         .append("_id", appleId)
         .append("lobbyName", "Shine On You Crazy Diamond")
-        .append("lobbyIDs", null);
+        .append("lobbyIDs", null)
+        .append("round", 1);
 
     lobbyDocuments.insertMany(testLobbies);
     lobbyDocuments.insertOne(apple);
@@ -271,7 +278,6 @@ public class LobbyControllerSpec {
     for (int i = 0; i < newLobby.userIDs.length; i++) {
       if (i == 0) {
           compareUserIDs += newLobby.userIDs[i];
-
       } else {
         compareUserIDs += ", " + newLobby.userIDs[i];
       }
@@ -373,5 +379,49 @@ public class LobbyControllerSpec {
 
     // User is still not in the database
     assertEquals(0, db.getCollection("users").countDocuments(eq("_id", new ObjectId(testID))));
+  }
+
+  @Test
+  void tryToGetRound() throws IOException {
+    String testID = appleId.toHexString();
+    when(ctx.pathParam("id")).thenReturn(testID);
+    lobbyController.getLobbyRound(ctx);
+    verify(ctx).json(mapCaptor.capture());
+    verify(ctx).status(HttpStatus.OK);
+    assertEquals("{round=1}", mapCaptor.getAllValues().get(0).toString());
+  }
+
+  @Test
+  void tryToGetRoundWithNonExistantID() throws IOException {
+    String id = "588935f5c668650dc77df581";
+    when(ctx.pathParam("id")).thenReturn(id);
+
+    Throwable exception = assertThrows(NotFoundResponse.class, () -> {
+      lobbyController.getLobbyRound(ctx);
+    });
+
+    assertEquals("Lobby not found", exception.getMessage());
+  }
+
+  @Test
+  void incrementLobbyRoundWithExistingID() throws IOException {
+    String testID = appleId.toHexString();
+    when(ctx.pathParam("id")).thenReturn(testID);
+    lobbyController.incrementLobbyRound(ctx);
+    verify(ctx).json(mapCaptor.capture());
+    verify(ctx).status(HttpStatus.OK);
+    assertEquals("{round=2}", mapCaptor.getAllValues().get(0).toString());
+  }
+
+  @Test
+  void incrementLobbyRoundWithNonExistantID() throws IOException {
+    String id = "588935f5c668650dc77df581";
+    when(ctx.pathParam("id")).thenReturn(id);
+
+    Throwable exception = assertThrows(NotFoundResponse.class, () -> {
+      lobbyController.incrementLobbyRound(ctx);
+    });
+
+    assertEquals("Lobby not found", exception.getMessage());
   }
 }

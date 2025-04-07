@@ -15,14 +15,16 @@ import { LobbyService } from 'src/app/host/lobby.service';
 export class MockLobbyService extends LobbyService {
   static testLobbies: Lobby[] = [
     {
-      _id: 'lobby1_id',
+      _id: '1',
       userIDs: ["Bruh"],
       lobbyName: 'Cards Against Humanity',
+      round: 0,
     },
     {
-      _id: 'lobby2_id',
+      _id: '2',
       userIDs: ["Bruh"],
       lobbyName: 'Apples to Apples',
+      round: 1,
     }
   ];
 
@@ -54,6 +56,28 @@ export class MockLobbyService extends LobbyService {
       return of(MockLobbyService.testLobbies[0]);
     } else if (id === MockLobbyService.testLobbies[1]._id) {
       return of(MockLobbyService.testLobbies[1]);
+    } else {
+      return of(null);
+    }
+  }
+
+  getLobbyRound( lobbyId: string): Observable<number> {
+    if (lobbyId === MockLobbyService.testLobbies[0]._id) {
+      return of(MockLobbyService.testLobbies[0].round);
+    } else if (lobbyId === MockLobbyService.testLobbies[1]._id) {
+      return of(MockLobbyService.testLobbies[1].round);
+    } else {
+      return of(null);
+    }
+  }
+
+  incrementLobbyRound(lobbyId: string): Observable<number> {
+    if (lobbyId === MockLobbyService.testLobbies[0]._id) {
+      MockLobbyService.testLobbies[0].round++;
+      return of(MockLobbyService.testLobbies[0].round);
+    } else if (lobbyId === MockLobbyService.testLobbies[1]._id) {
+      MockLobbyService.testLobbies[1].round++;
+      return of(MockLobbyService.testLobbies[1].round);
     } else {
       return of(null);
     }

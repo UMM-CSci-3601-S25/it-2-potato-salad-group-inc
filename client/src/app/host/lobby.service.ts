@@ -17,6 +17,7 @@ export class LobbyService {
   readonly lobbyUrl: string = `${environment.apiUrl}lobbies`;
 
   private readonly lobbyNameKey = 'lobbyName';
+  private readonly roundKey = 'round';
   private readonly userIDsKey = 'userIDs';
 
   // The private `HttpClient` is *injected* into the service
@@ -46,7 +47,7 @@ export class LobbyService {
    *  from the server after a possibly substantial delay (because we're
    *  contacting a remote server over the Internet).
    */
-  getLobbies(filters?: { lobbyName?: string}): Observable<Lobby[]> {
+  getLobbies(filters?: { lobbyName?: string; round?: number}): Observable<Lobby[]> {
     // `HttpParams` is essentially just a map used to hold key-value
     // pairs that are then encoded as "?key1=value1&key2=value2&…" in
     // the URL when we make the call to `.get()` below.
@@ -54,6 +55,9 @@ export class LobbyService {
     if (filters) {
       if (filters.lobbyName) {
         httpParams = httpParams.set(this.lobbyNameKey, filters.lobbyName);
+      }
+      if (filters.round) {
+        httpParams = httpParams.set(this.roundKey, filters.round);
       }
     }
     // Send the HTTP GET request with the given URL and parameters.
@@ -85,19 +89,6 @@ export class LobbyService {
       map(response => response.round)
     );
   }
-
-  getUserScore(lobbyId: string, username: string): Observable<number> {
-    return this.httpClient.get<{ score: number }>(`${this.lobbyUrl}/${lobbyId}/users/${username}/score`).pipe(
-      map(response => response.score)
-    );
-  }
-
-  incrementUserScore(lobbyId: string, username: string): Observable<number> {
-    return this.httpClient.post<{ score: number }>(`${this.lobbyUrl}/${lobbyId}/users/${username}/score/increment`, {}).pipe(
-      map(response => response.score)
-    );
-  }
-
   /**
    * A service method that filters an array of `Lobby` using
    * the specified filters.
@@ -111,13 +102,16 @@ export class LobbyService {
    * @param filters the map of key-value pairs used for the filtering
    * @returns an array of `Lobbies` matching the given filters
    */
-  filterLobbies(lobbies: Lobby[], filters: { lobbyName?: string}): Lobby[] { // skipcq: JS-0105
+  filterLobbies(lobbies: Lobby[], filters: { lobbyName?: string; round?: number}): Lobby[] { // skipcq: JS-0105
     let filteredLobbies = lobbies;
 
     // Filter by lobbyName
     if (filters.lobbyName) {
       filters.lobbyName = filters.lobbyName.toLowerCase();
-      filteredLobbies = filteredLobbies.filter(lobby => lobby.lobbyName.toLowerCase().indexOf(filters.lobbyName) !== -1);
+      filteredLobbies = filteredLobbies.filter(lobby => lobby.lobbyName.toLowerCase().indexOf(filters.lobbyName) > -1);
+    }
+    if (filters.round) {
+      filteredLobbies = filteredLobbies.filter(lobby => lobby.round > -1);
     }
 
     return filteredLobbies;

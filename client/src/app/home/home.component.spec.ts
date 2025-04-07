@@ -1,5 +1,5 @@
 import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { MatCardModule } from '@angular/material/card';
 import { By } from '@angular/platform-browser';
 import { HomeComponent } from './home.component';
@@ -34,4 +34,15 @@ describe('Home', () => {
     expect(component).toBeTruthy();
   });
 
-});
+  it('Information box opens', fakeAsync(() => {
+    fixture.detectChanges();
+    expect(component).toBeTruthy();
+    spyOn(component, 'openDialog').and.callThrough();
+    const button = fixture.debugElement.nativeElement.querySelector('.info-fab');
+    button.click();
+    fixture.detectChanges();
+    tick();
+    expect(component.openDialog).toHaveBeenCalled();
+  }));
+
+})

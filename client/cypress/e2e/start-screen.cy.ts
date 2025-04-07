@@ -34,7 +34,6 @@ describe('Start Screen', () => {
     // On the page we were sent to, We should see the right title
     cy.get('.host-title').should('have.text', 'Host');
   });
-
   it('Should allow host button to redirect to the join page', () => {
     page.navigateTo();
 

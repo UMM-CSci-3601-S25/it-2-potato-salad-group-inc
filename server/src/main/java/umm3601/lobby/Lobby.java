@@ -33,6 +33,7 @@ public class Lobby {
   public String _id;
   public String[] userIDs;
   public String lobbyName;
+  public int round;
 
   @Override
   public boolean equals(Object obj) {

@@ -50,7 +50,8 @@ describe('Create Lobby', () => {
       const lobby: Lobby = {
         _id: null,
         userIDs: null,
-        lobbyName: 'Test Lobby'
+        lobbyName: 'Test Lobby',
+        round: null
       };
 
       // The `page.addlobby(lobby)` call ends with clicking the "Add lobby"

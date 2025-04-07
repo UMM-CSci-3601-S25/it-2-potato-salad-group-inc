@@ -34,6 +34,7 @@ public class LobbyController implements Controller {
   private static final String API_LOBBIES = "/api/lobbies";
   private static final String API_LOBBY_BY_ID = "/api/lobbies/{id}";
   static final String NAME_KEY = "lobbyName";
+  static final String ROUND_KEY = "round";
   static final String SORT_ORDER_KEY = "sortorder";
   static final String USERS_KEY = "users";
 
@@ -123,6 +124,12 @@ public class LobbyController implements Controller {
       Pattern pattern = Pattern.compile(targetContent, Pattern.CASE_INSENSITIVE);
       filters.add(regex("lobbyName", pattern));
     }
+    if (ctx.queryParamMap().containsKey(ROUND_KEY)) {
+      int targetContent = ctx.queryParamAsClass(ROUND_KEY, Integer.class)
+      .check(it -> it == 0, "Lobby round must be at 0 when starting! You provided " + ctx.queryParam(ROUND_KEY))
+      .get();
+      filters.add(eq(ROUND_KEY, targetContent));
+    }
 
     // Combine the list of filters into a single filtering document.
     Bson combinedFilter = filters.isEmpty() ? new Document() : and(filters);
@@ -130,6 +137,31 @@ public class LobbyController implements Controller {
     return combinedFilter;
   }
 
+  public void getLobbyRound(Context ctx) {
+    String id = ctx.pathParam("id");
+    Lobby lobby = lobbyCollection.find(eq("_id", new ObjectId(id))).first();
+    if (lobby == null) {
+      throw new NotFoundResponse("Lobby not found");
+    }
+
+    ctx.json(Map.of("round", lobby.round));
+    ctx.status(HttpStatus.OK);
+  }
+
+  public void incrementLobbyRound(Context ctx) {
+    String id = ctx.pathParam("id");
+    Lobby lobby = lobbyCollection.find(eq("_id", new ObjectId(id))).first();
+    if (lobby == null) {
+      throw new NotFoundResponse("Lobby not found");
+    }
+
+    // Increment the round number
+    lobby.round++;
+    lobbyCollection.replaceOne(eq("_id", new ObjectId(id)), lobby);
+
+    ctx.json(Map.of("round", lobby.round));
+    ctx.status(HttpStatus.OK);
+  }
   /**
    * Construct a Bson sorting document to use in the `sort` method based on the
    * query parameters from the context.
@@ -247,8 +279,9 @@ public class LobbyController implements Controller {
     Lobby newLobby = ctx.bodyValidator(Lobby.class)
       .check(lobby -> lobby.lobbyName != null && lobby.lobbyName.length() > 0,
         "Lobby must have a non-empty lobby name; body was " + body)
+      .check(lobby -> lobby.round == 0, "Lobby round must be at 0 when starting! You provided: "
+       + ctx.queryParam(ROUND_KEY))
       .get();
-
 
     // Add the new lobby to the database
     lobbyCollection.insertOne(newLobby);
@@ -285,7 +318,6 @@ public class LobbyController implements Controller {
   }
 
 
-
   /**
    * Sets up routes for the `lobby` collection endpoints.
    * A LobbyController instance handles the lobby endpoints,
@@ -318,6 +350,12 @@ public class LobbyController implements Controller {
   public void addRoutes(Javalin server) {
     // Get the specified lobby
     server.get(API_LOBBY_BY_ID, this::getLobby);
+
+    // Get the round number for the specified lobby
+    server.get("/api/lobbies/{id}/round", this::getLobbyRound);
+
+    // Increment the round number for the specified lobby
+    server.post("/api/lobbies/{id}/round/increment", this::incrementLobbyRound);
 
     // List lobbies, filtered using query parameters
     server.get(API_LOBBIES, this::getLobbies);

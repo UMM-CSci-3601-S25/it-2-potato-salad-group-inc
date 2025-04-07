@@ -1,13 +1,12 @@
-import { Component, DestroyRef, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, signal, OnInit } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
-import { ActivatedRoute, ParamMap } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 //import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { Game } from '../game';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { of } from 'rxjs';
@@ -24,13 +23,13 @@ import { LobbyService } from '../host/lobby.service';
 })
 export class GameComponent implements OnInit {
   round: number = 0;
-  score: number = 0;
   lobbyId: string = ''; // Replace with actual lobby ID
+  error = signal({help: 'Error loading game', httpResponse: 'Error loading game', message: 'Error'});
   game = toSignal(
     this.route.paramMap.pipe(
       // Map the paramMap into the id
       map((paramMap: ParamMap) => paramMap.get('id')),
-      switchMap((id: string) => this.httpClient.get<Game>(`/api/game/${id}`)),
+      switchMap((id: string) => this.lobbyService.getLobbyById(id)),
       catchError((_err) => {
         this.error.set({
           help: 'There was a problem loading the game – try again.',
@@ -39,12 +38,8 @@ export class GameComponent implements OnInit {
         });
         return of();
       })
-
     ));
-  error = signal({help: '', httpResponse: '', message: ''});
-  submit() {
-    this.httpClient.put<Game>('/api/game/submit', {prompt: this.submission});
-  }
+
 
   submission = "";
   username = "Steady Roosevelt";
@@ -54,13 +49,17 @@ export class GameComponent implements OnInit {
     private httpClient: HttpClient,
     private snackBar: MatSnackBar,
     private destroyRef: DestroyRef,
-    private lobbyService: LobbyService
+    private lobbyService: LobbyService,
+    private router: Router,
   ) {}
 
   ngOnInit() {
+    this.route.paramMap.subscribe((paramMap: ParamMap) => {
+      this.lobbyId = paramMap.get('id') || '';
+      this.fetchRound();
+    });
     this.lobbyId = this.route.snapshot.params['id'] || '';
     this.fetchRound();
-    this.fetchScore();
   }
 
   fetchRound() {
@@ -74,22 +73,6 @@ export class GameComponent implements OnInit {
     this.lobbyService.incrementLobbyRound(this.lobbyId).subscribe({
       next: (round) => this.round = round,
       error: (err) => console.error('Failed to increment round:', err)
-    });
-  }
-
-  fetchScore() {
-    // Fetch the score from the server (implement this in your service)
-    this.lobbyService.getUserScore(this.lobbyId, this.username).subscribe({
-      next: (score) => this.score = score,
-      error: (err) => console.error('Failed to fetch score:', err)
-    });
-  }
-
-  incrementScore() {
-    // Increment the score on the server (implement this in your service)
-    this.lobbyService.incrementUserScore(this.lobbyId, this.username).subscribe({
-      next: (score) => this.score = score,
-      error: (err) => console.error('Failed to increment score:', err)
     });
   }
 }
