@@ -1,6 +1,6 @@
 import { Component, DestroyRef, signal, OnInit } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
-import { ActivatedRoute, ParamMap } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
@@ -23,7 +23,7 @@ import { LobbyService } from '../host/lobby.service';
 })
 export class GameComponent implements OnInit {
   round: number = 0;
-  lobbyId: string = this.route.snapshot.params['id']; // Replace with actual lobby ID
+  lobbyId: string = ''; // Replace with actual lobby ID
   game = toSignal(
     this.route.paramMap.pipe(
       // Map the paramMap into the id
@@ -38,7 +38,7 @@ export class GameComponent implements OnInit {
         return of();
       })
     ));
-  error = signal({help: '', httpResponse: '', message: ''});
+  error = signal({help: 'Error loading game', httpResponse: 'Error loading game', message: 'Error'});
 
 
   submission = "";
@@ -49,10 +49,12 @@ export class GameComponent implements OnInit {
     private httpClient: HttpClient,
     private snackBar: MatSnackBar,
     private destroyRef: DestroyRef,
-    private lobbyService: LobbyService
+    private lobbyService: LobbyService,
+    private router: Router,
   ) {}
 
   ngOnInit() {
+    this.lobbyId = this.route.snapshot.params['id'] || '';
     this.fetchRound();
   }
 

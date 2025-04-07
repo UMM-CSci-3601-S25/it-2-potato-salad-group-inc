@@ -3,19 +3,19 @@
     <mat-card class="home-card">
       <mat-form-field>
         Username:
-        <input type="text" value={{username}}>
+        <input type="text" value={{username}} matInput>
       </mat-form-field>
     </mat-card>
     <ul class="player-list">
     </ul>
     <div class="round-counter">
       <h2>Round: {{ round }}</h2>
-      <button (click)="incrementRound()">Next Round</button>
+      <button (click)="incrementRound()" class="round-increment">Next Round</button>
     </div>
    <ul style="display: flex"><li>strip</li><li>Bear</li><li>dARTH</li><li>the loraks</li><li>bbig</li></ul>
    <ul style="float: right; width: 25%; color: green"><li>1 KK</li><li>2 Haider</li><li>0 James</li><li>1 Elliott</li><li>5 not the lorax [JUDGE]</li><li>3 teddy</li></ul>
    <mat-form-field>
-    <input type="text" [(ngModel)]="submission">
+    <input type="text" [(ngModel)]="submission" matInput>
   </mat-form-field>
 
   </div>
