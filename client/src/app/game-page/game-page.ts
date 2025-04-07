@@ -22,7 +22,10 @@ import { LobbyService } from '../host/lobby.service';
   providers: [],
   imports: [MatCardModule, MatInputModule, MatFormFieldModule, MatSelectModule, FormsModule, MatCheckboxModule]
 })
-export class GameComponent {
+export class GameComponent implements OnInit {
+  round: number = 0;
+  score: number = 0;
+  lobbyId: string = ''; // Replace with actual lobby ID
   game = toSignal(
     this.route.paramMap.pipe(
       // Map the paramMap into the id
@@ -53,4 +56,40 @@ export class GameComponent {
     private destroyRef: DestroyRef,
     private lobbyService: LobbyService
   ) {}
+
+  ngOnInit() {
+    this.lobbyId = this.route.snapshot.params['id'] || '';
+    this.fetchRound();
+    this.fetchScore();
+  }
+
+  fetchRound() {
+    this.lobbyService.getLobbyRound(this.lobbyId).subscribe({
+      next: (round) => this.round = round,
+      error: (err) => console.error('Failed to fetch round:', err)
+    });
+  }
+
+  incrementRound() {
+    this.lobbyService.incrementLobbyRound(this.lobbyId).subscribe({
+      next: (round) => this.round = round,
+      error: (err) => console.error('Failed to increment round:', err)
+    });
+  }
+
+  fetchScore() {
+    // Fetch the score from the server (implement this in your service)
+    this.lobbyService.getUserScore(this.lobbyId, this.username).subscribe({
+      next: (score) => this.score = score,
+      error: (err) => console.error('Failed to fetch score:', err)
+    });
+  }
+
+  incrementScore() {
+    // Increment the score on the server (implement this in your service)
+    this.lobbyService.incrementUserScore(this.lobbyId, this.username).subscribe({
+      next: (score) => this.score = score,
+      error: (err) => console.error('Failed to increment score:', err)
+    });
+  }
 }

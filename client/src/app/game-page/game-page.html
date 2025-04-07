@@ -8,7 +8,14 @@
     </mat-card>
     <ul class="player-list">
     </ul>
-   <h1 style="margin: 0 5%">{{game().prompt}}</h1>
+    <div class="score-counter">
+      <h2 class="score-value">Score: {{ score }}</h2>
+      <button class="increment-score" (click)="incrementScore()">Increase Score</button>
+    </div>
+    <div class="round-counter">
+      <h2 class="round-value">Round: {{ round }}</h2>
+      <button class="increment-round" (click)="incrementRound()">Next Round</button>
+    </div>
    <ul style="display: flex"><li>strip</li><li>Bear</li><li>dARTH</li><li>the loraks</li><li>bbig</li></ul>
    <ul style="float: right; width: 25%; color: green"><li>1 KK</li><li>2 Haider</li><li>0 James</li><li>1 Elliott</li><li>5 not the lorax [JUDGE]</li><li>3 teddy</li></ul>
    <mat-form-field>
