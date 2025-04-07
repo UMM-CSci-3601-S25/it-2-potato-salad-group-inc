@@ -81,7 +81,7 @@ export class AddLobbyComponent {
       next: (newId) => {
         console.log(newId);
         this.snackBar.open(
-          `Added lobby ${this.addLobbyForm.value.round}`,
+          `Added lobby ${this.addLobbyForm.value.lobbyName}`,
           null,
           { duration: 2000 }
         );
