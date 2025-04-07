@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -6,8 +6,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { LobbyService } from '../host/lobby.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { WebSocketService } from '../game-page/web-socket.service';
+
 
 @Component({
   selector: 'app-join',
@@ -20,44 +21,51 @@ import { WebSocketService } from '../game-page/web-socket.service';
       MatInputModule,
       MatButtonModule
     ],
-  templateUrl: './join.component.html',
-  styleUrl: './join.component.scss'
+  templateUrl: './specify.component.html',
+  styleUrl: './specify.component.scss'
 })
-export class JoinComponent {
-
-  userForm = new FormGroup({
+export class SpecifyComponent {
+  error = signal({help: 'Error loading game', httpResponse: 'Error loading game', message: 'Error'});
+  joinLobbyForm = new FormGroup({
     // We allow alphanumeric input and limit the length for a lobby id.
-    userName: new FormControl('', Validators.compose([
+    lobbyId: new FormControl('', Validators.compose([
       Validators.required,
-      Validators.minLength(2),
-      // length of the player name must be 2-100 characters
-      Validators.maxLength(100),
+      Validators.minLength(24),
+      // length of the game id will be 24
+      Validators.maxLength(24),
+      Validators.pattern('^[A-Fa-f0-9]{24}$')
     ])),
   });
 
   readonly joinLobbyValidationMessages = {
-    userName: [
-      {type: 'required', message: 'Player name is required'},
-      {type: 'minlength', message: 'Name must be at least 2 characters long'},
-      {type: 'maxlength', message: 'Name cannot be more than 100 characters long'},
+    lobbyId: [
+      {type: 'required', message: 'Game ID is required'},
+      {type: 'minlength', message: 'Game ID must be at least 24 characters long'},
+      {type: 'maxlength', message: 'Game ID cannot be more than 24 characters long'},
+      {type: 'pattern', message: 'Game ID must be a 24 character hexadecimal string'},
+      {type: 'serverError', message: 'Game ID not found -- try a different Game ID'},
+      {type: 'badRequest', message: 'Bad request -- make sure the Game ID is a valid hexadecimal string'}
     ],
   };
 
   constructor(
+    private route: ActivatedRoute,
     private webSocketService: WebSocketService,
     private lobbyService: LobbyService,
     private snackBar: MatSnackBar,
     private router: Router) {
   }
 
+  lobbyID = signal(this.route.snapshot.params['id'] || null);
+
   formControlHasError(controlName: string): boolean {
-    return this.userForm.get(controlName).invalid &&
-      (this.userForm.get(controlName).dirty || this.userForm.get(controlName).touched);
+    return this.joinLobbyForm.get(controlName).invalid &&
+      (this.joinLobbyForm.get(controlName).dirty || this.joinLobbyForm.get(controlName).touched);
   }
 
   getErrorMessage(name: keyof typeof this.joinLobbyValidationMessages): string {
     for(const {type, message} of this.joinLobbyValidationMessages[name]) {
-      if (this.userForm.get(name).hasError(type)) {
+      if (this.joinLobbyForm.get(name).hasError(type)) {
         return message;
       }
     }
@@ -65,16 +73,15 @@ export class JoinComponent {
   }
 
   submitForm() {
-
-    console.log('Lobby ID:', this.userForm.value.userName);
-    this.lobbyService.createUser(this.userForm.value).subscribe({
+    this.lobbyService.addPlayer(this.joinLobbyForm.value.lobbyId,  this.route.snapshot.params['uid']).subscribe({
       next: (newId) => {
         this.snackBar.open(
-          `Joined lobby with id: ${this.userForm.value.userName} + ${newId}`,
+          `Joined lobby with id: ${this.joinLobbyForm.value.lobbyId} + ${newId}`,
           null,
           { duration: 5000 }
         );
-        this.router.navigate(['/specify/', newId]);
+        this.onPlayerAdd();
+        this.router.navigate(['/game/', this.joinLobbyForm.value.lobbyId, this.route.snapshot.params['uid']]);
       },
       error: err => {
         if (err.status === 400) {
@@ -83,14 +90,14 @@ export class JoinComponent {
             'OK',
             { duration: 1 }
           );
-          this.userForm.controls['userName'].setErrors({ badRequest: err.message });
+          this.joinLobbyForm.controls['lobbyId'].setErrors({ badRequest: err.message });
         } else if (err.status === 500) {
           this.snackBar.open(
             `The server failed to process your request to join a lobby. Is the server up? – Error Code: ${err.status}\nMessage: ${err.message}`,
             'OK',
             { duration: 1 }
           );
-          this.userForm.controls['userName'].setErrors({ serverError: err.message });
+          this.joinLobbyForm.controls['lobbyId'].setErrors({ serverError: err.message });
         } else {
           this.snackBar.open(
             `An unexpected error occurred – Error Code: ${err.status}\nMessage: ${err.message}`,
@@ -105,7 +112,8 @@ export class JoinComponent {
   onPlayerAdd() {
     const message = {
       type: 'ADD_PLAYER',
-      userName: this.userForm.value.userName,
+      lobbyId: this.joinLobbyForm.value.lobbyId,
+      playerName: this.route.snapshot.params['uid'],
     };
 
     this.webSocketService.sendMessage(message);

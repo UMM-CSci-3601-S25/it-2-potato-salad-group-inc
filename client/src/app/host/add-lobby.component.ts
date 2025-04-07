@@ -7,7 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { LobbyService } from './lobby.service';
 
 @Component({
@@ -59,7 +59,8 @@ export class AddLobbyComponent {
   constructor(
     private lobbyService: LobbyService,
     private snackBar: MatSnackBar,
-    private router: Router) {
+    private router: Router,
+    private route: ActivatedRoute) {
   }
 
   formControlHasError(controlName: string): boolean {
@@ -81,11 +82,11 @@ export class AddLobbyComponent {
       next: (newId) => {
         console.log(newId);
         this.snackBar.open(
-          `Added lobby ${this.addLobbyForm.value.lobbyName}`,
+          `Added lobby ${newId}`,
           null,
           { duration: 2000 }
         );
-        this.router.navigate(['/game/', newId]);
+        this.router.navigate(['/specify/', newId, this.route.snapshot.params['uid']]);
       },
       error: err => {
         if (err.status === 400) {

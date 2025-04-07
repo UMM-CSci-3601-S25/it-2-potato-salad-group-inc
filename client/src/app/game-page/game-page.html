@@ -1,21 +1,29 @@
 <div class="flex-row">
   <div class="flex-1">
+
     <mat-card class="home-card">
       <mat-form-field>
-        Username:
-        <input type="text" value={{username}} matInput>
+        Lobby Name: {{game().lobbyName}}
+        <div>
+          Lobby ID: {{game()._id}}
+        </div>
       </mat-form-field>
     </mat-card>
+    <div style="float: right">
     <ul class="player-list">
+      @if (game().userIDs) {
+        <mat-list data-test="player-list">
+        @for (player of game().userIDs; track player; let i = $index) {
+
+          <mat-list-item data-test="player">{{ fetchUserName(player) }}</mat-list-item>
+        }
+        </mat-list>
+      }
     </ul>
-    <div class="round-counter">
+  </div>
+    <div style="float:left" class="round-counter">
       <h2 class="round-value">Round: {{ round }}</h2>
       <button class="increment-round" (click)="incrementRound()">Next Round</button>
     </div>
-   <ul style="display: flex"><li>strip</li><li>Bear</li><li>dARTH</li><li>the loraks</li><li>bbig</li></ul>
-   <ul style="float: right; width: 25%; color: green"><li>1 KK</li><li>2 Haider</li><li>0 James</li><li>1 Elliott</li><li>5 not the lorax [JUDGE]</li><li>3 teddy</li></ul>
-   <mat-form-field>
-    <input type="text" [(ngModel)]="submission" matInput>
-  </mat-form-field>
   </div>
 </div>

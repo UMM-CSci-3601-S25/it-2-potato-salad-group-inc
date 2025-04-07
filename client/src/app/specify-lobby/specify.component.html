@@ -3,16 +3,20 @@
   <mat-card class="add-user-card">
     <mat-card-header>
       <mat-card-title class="add-game-title">Join a lobby</mat-card-title>
+      @if(lobbyID != null)
+      {
+          Host Lobby Code: {{ lobbyID() }}
+      }
     </mat-card-header>
     <mat-card-content>
       <div class="flex-col">
             <br /><!--added this break to allow space fpr longer error messages-->
-            <mat-form-field [formGroup]="userForm">
-              <mat-label for="userName">UserName</mat-label>
+            <mat-form-field [formGroup]="joinLobbyForm">
+              <mat-label for="lobbyId">lobbyId</mat-label>
               <input matInput type="text"
-                formControlName="userName" required>
-              @if (formControlHasError('userName')) {
-                <mat-error data-test="userNameError">{{getErrorMessage('userName')}}
+                formControlName="lobbyId" required>
+              @if (formControlHasError('lobbyId')) {
+                <mat-error data-test="lobbyIdError">{{getErrorMessage('lobbyId')}}
                 </mat-error>
               }
             </mat-form-field>
@@ -25,7 +29,7 @@
           mat-raised-button
           type="button"
           color="primary"
-          [disabled]="!userForm.valid"
+          [disabled]="!joinLobbyForm.valid"
           type="submit"
           data-test="confirmJoinButton"
           >

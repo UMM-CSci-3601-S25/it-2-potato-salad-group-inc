@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Lobby } from './lobby';
+import { User } from './user';
 
 /**
  * Service that provides the interface for getting information
@@ -15,6 +16,7 @@ import { Lobby } from './lobby';
 export class LobbyService {
   // The URL for the lobbies part of the server API.
   readonly lobbyUrl: string = `${environment.apiUrl}lobbies`;
+  readonly UserUrl: string = `${environment.apiUrl}users`;
 
   private readonly lobbyNameKey = 'lobbyName';
   private readonly roundKey = 'round';
@@ -121,5 +123,18 @@ export class LobbyService {
     // Send post request to add a new lobby with the lobby data as the body.
     // `res.id` should be the MongoDB ID of the newly added `Lobby`.
     return this.httpClient.post<{id: string}>(this.lobbyUrl, newLobby).pipe(map(response => response.id));
+  }
+
+  createUser(newUser: Partial<User>): Observable<string> {
+    return this.httpClient.post<{id: string}>(this.UserUrl, newUser).pipe(map(response => response.id));
+  }
+
+  addPlayer(lobbyId: string, userIDs: string): Observable<Lobby> {
+    // Look at the game with the given id, take all the values, but update the players to add the new one
+    return this.httpClient.put<Lobby>(`${this.lobbyUrl}/${lobbyId}/${userIDs}`, null);
+  }
+
+  getUserById(id: string): Observable<User> {
+    return this.httpClient.get<User>(`${this.UserUrl}/${id}`);
   }
 }

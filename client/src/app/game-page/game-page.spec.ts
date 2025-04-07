@@ -98,10 +98,6 @@ describe('GameComponent', () => {
     expect(component.round).toBe(1);
   }));
 
-  it('should initialize with default username and submission', fakeAsync(() => {
-    expect(component.username).toBe('Steady Roosevelt');
-    expect(component.submission).toBe('');
-  }));
 
 
 

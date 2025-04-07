@@ -1,6 +1,9 @@
 package umm3601;
 
 import java.util.Arrays;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ServerAddress;
@@ -11,6 +14,8 @@ import org.bson.UuidRepresentation;
 
 import io.javalin.Javalin;
 import io.javalin.http.InternalServerErrorResponse;
+import io.javalin.websocket.WsContext;
+
 
 /**
  * The class used to configure and start a Javalin server.
@@ -19,6 +24,7 @@ public class Server {
 
   // The port that the server should run on.
   private static final int SERVER_PORT = 4567;
+  private static final long WEB_SOCKET_PING_INTERVAL = 5;
 
   // The `mongoClient` field is used to access the MongoDB
   private final MongoClient mongoClient;
@@ -26,6 +32,7 @@ public class Server {
   // The `controllers` field is an array of all the `Controller` implementations
   // for the server. This is used to add routes to the server.
   private Controller[] controllers;
+    private static Set<WsContext> connectedClients = ConcurrentHashMap.newKeySet();
 
   /**
    * Construct a `Server` object that we'll use (via `startServer()`) to configure
@@ -117,6 +124,27 @@ public class Server {
       config.bundledPlugins.enableRouteOverview("/api")
     );
 
+    System.out.println("Configuring WebSocket endpoint...");
+    server.ws("/api/websocket", ws -> {
+      System.out.println("WebSocket endpoint created");
+      ws.onConnect(ctx -> {
+        connectedClients.add(ctx);
+        ctx.enableAutomaticPings(WEB_SOCKET_PING_INTERVAL, TimeUnit.SECONDS);
+        System.out.println("Client connected");
+      });
+
+      ws.onMessage(ctx -> {
+        String message = ctx.message();
+        System.out.println("Received message from client");
+        broadcastMessage(message);
+      });
+
+      ws.onClose(ctx -> {
+        connectedClients.remove(ctx);
+        System.out.println("Client disconnected");
+      });
+    });
+
     // Configure the MongoDB client and the Javalin server to shut down gracefully.
     configureShutdowns(server);
 
@@ -136,6 +164,13 @@ public class Server {
     return server;
   }
 
+
+  private static void broadcastMessage(String message) {
+    for (WsContext client : connectedClients) {
+      System.out.println("sent broadcast of " + message + " to:" + client.toString());
+      client.send(message);
+    }
+  }
   /**
    * Configure the server and the MongoDB client to shut down gracefully.
    *
