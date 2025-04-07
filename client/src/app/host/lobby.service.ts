@@ -74,6 +74,30 @@ export class LobbyService {
     return this.httpClient.get<Lobby>(`${this.lobbyUrl}/${id}`);
   }
 
+  getLobbyRound( lobbyId: string): Observable<number> {
+    return this.httpClient.get<Lobby>(`${this.lobbyUrl}/${lobbyId}`).pipe(
+      map((lobby: Lobby) => lobby.round)
+    );
+  }
+
+  incrementLobbyRound(lobbyId: string): Observable<number> {
+    return this.httpClient.post<{ round: number }>(`${this.lobbyUrl}/${lobbyId}/round/increment`, {}).pipe(
+      map(response => response.round)
+    );
+  }
+
+  getUserScore(lobbyId: string, username: string): Observable<number> {
+    return this.httpClient.get<{ score: number }>(`${this.lobbyUrl}/${lobbyId}/users/${username}/score`).pipe(
+      map(response => response.score)
+    );
+  }
+
+  incrementUserScore(lobbyId: string, username: string): Observable<number> {
+    return this.httpClient.post<{ score: number }>(`${this.lobbyUrl}/${lobbyId}/users/${username}/score/increment`, {}).pipe(
+      map(response => response.score)
+    );
+  }
+
   /**
    * A service method that filters an array of `Lobby` using
    * the specified filters.
