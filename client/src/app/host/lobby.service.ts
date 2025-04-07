@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Lobby } from './lobby';
+import { WebSocketSubject } from 'rxjs/webSocket';
 
 /**
  * Service that provides the interface for getting information
@@ -16,6 +18,7 @@ export class LobbyService {
   // The URL for the lobbies part of the server API.
   readonly lobbyUrl: string = `${environment.apiUrl}lobbies`;
 
+  private socket$: WebSocketSubject<any>;
   private readonly lobbyNameKey = 'lobbyName';
   private readonly userIDsKey = 'userIDs';
 
@@ -27,6 +30,22 @@ export class LobbyService {
   // make "real" HTTP calls to a server that might not exist or
   // might not be currently running.
   constructor(private httpClient: HttpClient) {
+    this.socket$ = new WebSocketSubject('ws://localhost:8080/lobby-updates');
+  }
+
+  getUpdates() {
+    return this.socket$;
+  }
+
+  sendMessage(message: any) {
+    this.socket$.next(message);
+  }
+
+  updateUsername(lobbyId: string, oldUsername: string, newUsername: string) {
+    return this.httpClient.put(`/api/lobby/${lobbyId}/update-username`, {
+      oldUsername,
+      newUsername
+    });
   }
 
   /**
@@ -61,6 +80,11 @@ export class LobbyService {
     return this.httpClient.get<Lobby[]>(this.lobbyUrl, {
       params: httpParams,
     });
+  }
+
+  getUsers(lobbyId: string) {
+    // Replace the URL with the actual endpoint for fetching users
+    return this.httpClient.get<{ username: string; score: number }[]>(`/api/lobby/${lobbyId}/users`);
   }
 
   /**

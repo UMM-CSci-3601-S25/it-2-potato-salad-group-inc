@@ -7,6 +7,10 @@
       </mat-form-field>
     </mat-card>
     <ul class="player-list">
+      <li *ngFor="let user of users">
+        {{ user.username }} - Score: {{ user.score }}
+        <button (click)="editUsername(user)">Edit</button>
+      </li>
     </ul>
     <div class="score-counter">
       <h2 class="score-value">Score: {{ score }}</h2>

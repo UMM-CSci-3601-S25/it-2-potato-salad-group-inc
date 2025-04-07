@@ -14,7 +14,6 @@ import { of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { LobbyService } from '../host/lobby.service';
-
 @Component({
   selector: 'app-game-page',
   templateUrl: 'game-page.html',
@@ -23,6 +22,7 @@ import { LobbyService } from '../host/lobby.service';
   imports: [MatCardModule, MatInputModule, MatFormFieldModule, MatSelectModule, FormsModule, MatCheckboxModule]
 })
 export class GameComponent implements OnInit {
+  users: { username: string; score: number }[] = [];
   round: number = 0;
   score: number = 0;
   lobbyId: string = ''; // Replace with actual lobby ID
@@ -47,20 +47,28 @@ export class GameComponent implements OnInit {
   }
 
   submission = "";
-  username = "Steady Roosevelt";
+  username: string = '';
 
   constructor(
     private route: ActivatedRoute,
     private httpClient: HttpClient,
     private snackBar: MatSnackBar,
     private destroyRef: DestroyRef,
-    private lobbyService: LobbyService
+    private lobbyService: LobbyService,
   ) {}
 
   ngOnInit() {
     this.lobbyId = this.route.snapshot.params['id'] || '';
     this.fetchRound();
     this.fetchScore();
+
+    this.lobbyService.getUpdates().subscribe((update) => {
+      if (update.lobbyId === this.lobbyId) {
+        this.users = update.users;
+      }
+    });
+
+    this.fetchUsers();
   }
 
   fetchRound() {
@@ -91,5 +99,20 @@ export class GameComponent implements OnInit {
       next: (score) => this.score = score,
       error: (err) => console.error('Failed to increment score:', err)
     });
+  }
+
+  fetchUsers() {
+    this.lobbyService.getUsers(this.lobbyId).subscribe((users) => {
+      this.users = users;
+    });
+  }
+
+  editUsername(user: { username: string; score: number }) {
+    const newUsername = prompt('Enter new username:', user.username);
+    if (newUsername && newUsername !== user.username) {
+      this.lobbyService.updateUsername(this.lobbyId, user.username, newUsername).subscribe(() => {
+        user.username = newUsername;
+      });
+    }
   }
 }

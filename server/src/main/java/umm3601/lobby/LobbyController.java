@@ -1,9 +1,11 @@
 package umm3601.lobby;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.bson.Document;
@@ -16,6 +18,8 @@ import com.mongodb.client.MongoDatabase;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.regex;
+import static com.mongodb.client.model.Filters.in;
+import static com.mongodb.client.model.Updates.set;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
 
@@ -24,7 +28,11 @@ import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.NotFoundResponse;
+import io.javalin.websocket.WsContext;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import umm3601.Controller;
+import umm3601.user.User;
 
 /**
  * Controller that manages requests for info about lobbies.
@@ -38,6 +46,22 @@ public class LobbyController implements Controller {
   static final String USERS_KEY = "users";
 
   private final JacksonMongoCollection<Lobby> lobbyCollection;
+  private static final Set<WsContext> lobbySockets = ConcurrentHashMap.newKeySet();
+  private static final Set<WsContext> connectedClients = ConcurrentHashMap.newKeySet();
+
+  public static void handleConnect(WsContext ctx) {
+    connectedClients.add(ctx);
+  }
+
+  public static void handleDisconnect(WsContext ctx) {
+    connectedClients.remove(ctx);
+  }
+
+  public static void broadcastUserListUpdate(String lobbyId, String lobbyId2) {
+    for (WsContext client : connectedClients) {
+      client.send("Lobby " + lobbyId + " updated: " + lobbyId2);
+    }
+  }
 
   /**
    * Construct a controller for lobbies.
@@ -101,6 +125,32 @@ public class LobbyController implements Controller {
     // Explicitly set the context status to OK
     ctx.status(HttpStatus.OK);
   }
+
+  public void getUsersInLobby(Context ctx) {
+    String lobbyId = ctx.pathParam("id");
+    Lobby lobby = lobbyCollection.find(eq("_id", new ObjectId(lobbyId))).first();
+
+    if (lobby == null) {
+      throw new NotFoundResponse("Lobby not found");
+    }
+
+    List<Lobby> users = lobbyCollection.find(in("_id", lobby.userIDs)).into(new ArrayList<>());
+    ctx.json(users);
+  }
+
+  public void updateUsername(Context ctx) {
+  String lobbyId = ctx.pathParam("lobbyId");
+  String oldUsername = ctx.queryParam("oldUsername");
+  String newUsername = ctx.queryParam("newUsername");
+
+  Lobby lobby = lobbyCollection.find(eq("_id", new ObjectId(lobbyId))).first();
+  if (lobby == null || !Arrays.asList(lobby.userIDs).contains(oldUsername)) {
+    throw new NotFoundResponse("User not found in lobby");
+  }
+
+  lobbyCollection.updateOne(eq("userName", oldUsername), set("userName", newUsername));
+  LobbyController.broadcastUserListUpdate(lobbyId, lobbyId);
+}
 
   /**
    * Construct a Bson filter document to use in the `find` method based on the
