@@ -58,6 +58,8 @@ export class GameComponent implements OnInit {
       this.lobbyId = paramMap.get('id') || '';
       this.fetchRound();
     });
+    this.lobbyId = this.route.snapshot.params['id'] || '';
+    this.fetchRound();
   }
 
   fetchRound() {
