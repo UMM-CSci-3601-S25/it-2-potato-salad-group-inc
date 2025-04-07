@@ -89,7 +89,6 @@ export class LobbyService {
       map(response => response.round)
     );
   }
-
   /**
    * A service method that filters an array of `Lobby` using
    * the specified filters.
