@@ -24,6 +24,7 @@ import { LobbyService } from '../host/lobby.service';
 export class GameComponent implements OnInit {
   round: number = 0;
   lobbyId: string = ''; // Replace with actual lobby ID
+  error = signal({help: 'Error loading game', httpResponse: 'Error loading game', message: 'Error'});
   game = toSignal(
     this.route.paramMap.pipe(
       // Map the paramMap into the id
@@ -38,7 +39,6 @@ export class GameComponent implements OnInit {
         return of();
       })
     ));
-  error = signal({help: 'Error loading game', httpResponse: 'Error loading game', message: 'Error'});
 
 
   submission = "";
@@ -54,8 +54,10 @@ export class GameComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.lobbyId = this.route.snapshot.params['id'] || '';
-    this.fetchRound();
+    this.route.paramMap.subscribe((paramMap: ParamMap) => {
+      this.lobbyId = paramMap.get('id') || '';
+      this.fetchRound();
+    });
   }
 
   fetchRound() {

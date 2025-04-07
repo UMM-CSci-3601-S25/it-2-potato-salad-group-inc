@@ -21,10 +21,10 @@ export class MockLobbyService extends LobbyService {
       round: 0,
     },
     {
-      _id: 'lobby2_id',
+      _id: '2',
       userIDs: ["Bruh"],
       lobbyName: 'Apples to Apples',
-      round: 0,
+      round: 1,
     }
   ];
 

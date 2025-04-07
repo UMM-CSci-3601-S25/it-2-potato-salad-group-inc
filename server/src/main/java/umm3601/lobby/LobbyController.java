@@ -138,6 +138,7 @@ public class LobbyController implements Controller {
   }
 
   public void getLobbyRound(Context ctx) {
+    String id = ctx.pathParam("id");
     Lobby lobby = lobbyCollection.find(eq("_id", new ObjectId(id))).first();
     if (lobby == null) {
       throw new NotFoundResponse("Lobby not found");

@@ -178,6 +178,32 @@ describe('LobbyService', () => {
             .toHaveBeenCalledWith(`${lobbyService.lobbyUrl}/${targetId}`);
         });
       }));
+
+      it('calls getLobbyRound properly', waitForAsync(() => {
+        const targetLobby: Lobby = testLobbies[1];
+        const targetId: string = targetLobby._id;
+
+        // Mock the `httpClient.get()` method so that instead of making an HTTP request
+        // it just returns one lobby from our test data
+        const mockedMethod = spyOn(httpClient, 'get').and.returnValue(of(targetLobby));
+
+        // Call `lobbyService.getLobby()` and confirm that the correct call has
+        // been made with the correct arguments.
+        //
+        // We have to `subscribe()` to the `Observable` returned by `getLobbyById()`.
+        // The `lobby` argument in the function below is the thing of type Lobby returned by
+        // the call to `getLobbyById()`.
+        lobbyService.getLobbyRound(targetId).subscribe(() => {
+          // The `Lobby` returned by `getLobbyById()` should be targetLobby, but
+          // we don't bother with an `expect` here since we don't care what was returned.
+          expect(mockedMethod)
+            .withContext('one call')
+            .toHaveBeenCalledTimes(1);
+          expect(mockedMethod)
+            .withContext('talks to the correct endpoint')
+            .toHaveBeenCalledWith(`${lobbyService.lobbyUrl}/${targetId}`);
+        });
+      }))
     });
 
     describe('Filtering on the client using `filterLobbies()` (Angular/Client filtering)', () => {
