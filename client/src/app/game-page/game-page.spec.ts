@@ -75,7 +75,7 @@ describe('GameComponent', () => {
   it('should increment the round', fakeAsync(() => {
     mockParamMap.next(createMockParamMap({ id: '2', round: '1' }));
     spyOn(component, 'incrementRound').and.callThrough();
-    const button = fixture.debugElement.nativeElement.querySelector('.round-increment');
+    const button = fixture.debugElement.nativeElement.querySelector('.increment-round');
     button.click();
     fixture.detectChanges();
     tick();
