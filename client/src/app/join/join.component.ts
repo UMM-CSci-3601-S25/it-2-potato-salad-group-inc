@@ -6,7 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { LobbyService } from '../host/lobby.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { WebSocketService } from '../game-page/web-socket.service';
 
 @Component({
@@ -18,7 +18,7 @@ import { WebSocketService } from '../game-page/web-socket.service';
       MatCardModule,
       MatFormFieldModule,
       MatInputModule,
-      MatButtonModule
+      MatButtonModule,
     ],
   templateUrl: './join.component.html',
   styleUrl: './join.component.scss'
@@ -47,7 +47,8 @@ export class JoinComponent {
     private webSocketService: WebSocketService,
     private lobbyService: LobbyService,
     private snackBar: MatSnackBar,
-    private router: Router) {
+    private router: Router,
+    private route: ActivatedRoute) {
   }
 
   formControlHasError(controlName: string): boolean {
@@ -106,6 +107,7 @@ export class JoinComponent {
     const message = {
       type: 'ADD_PLAYER',
       userName: this.userForm.value.userName,
+      lobbyId: this.route.snapshot.params['id'],
     };
 
     this.webSocketService.sendMessage(message);

@@ -113,7 +113,7 @@ export class SpecifyComponent {
     const message = {
       type: 'ADD_PLAYER',
       lobbyId: this.joinLobbyForm.value.lobbyId,
-      playerName: this.route.snapshot.params['uid'],
+      userName: this.route.snapshot.params['uid'],
     };
 
     this.webSocketService.sendMessage(message);

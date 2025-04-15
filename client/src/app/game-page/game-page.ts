@@ -7,63 +7,35 @@ import { MatSelectModule } from '@angular/material/select';
 //import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { catchError, map, switchMap } from 'rxjs/operators';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { LobbyService } from '../host/lobby.service';
 import { MatListModule } from '@angular/material/list';
 import { Lobby } from '../host/lobby';
 import { WebSocketService } from './web-socket.service';
+import { User } from '../host/user';
 
 @Component({
   selector: 'app-game-page',
   templateUrl: 'game-page.html',
   styleUrls: ['./game-page.scss'],
   providers: [],
-  imports: [MatCardModule, MatInputModule, MatFormFieldModule, MatSelectModule, FormsModule, MatCheckboxModule, MatListModule]
+  imports: [MatCardModule, MatInputModule, MatFormFieldModule, MatSelectModule, FormsModule, MatCheckboxModule, MatListModule, MatFormFieldModule]
 })
 export class GameComponent implements OnInit {
   webSocketService = inject(WebSocketService);
+  LobbyService = inject(LobbyService);
+  tempResponse: string = 'bleh';
   round: number = 0;
   lobbyId: string = '';
   userId: string = '';
-  LlobbyService = inject(LobbyService);
   nameData = signal<Lobby>(null);
   LobbySignal = signal<Lobby | null>(null);
   userNames = signal<Map<string, string>>(new Map());
   error = signal({help: 'Error loading game', httpResponse: 'Error loading game', message: 'Error'});
-  game = toSignal(
-    this.route.paramMap.pipe(
-      // Map the paramMap into the id
-      map((paramMap: ParamMap) => paramMap.get('id')),
-      switchMap((id: string) => this.lobbyService.getLobbyById(id)),
-      catchError((_err) => {
-        this.error.set({
-          help: 'There was a problem loading the game – try again.',
-          httpResponse: _err.message,
-          message: _err.error?.title,
-        });
-        return of();
-      })
-    ));
-  user = toSignal(
-    this.route.paramMap.pipe(
-      // Map the paramMap into the id
-      map((paramMap: ParamMap) => paramMap.get('uid')),
-      switchMap((uid: string) => this.lobbyService.getUserById(uid)),
-      catchError((_err) => {
-        this.error.set({
-          help: 'There was a problem loading the game – try again.',
-          httpResponse: _err.message,
-          message: _err.error?.title,
-        });
-        return of();
-      })
-    ));
+  game = signal<Lobby | null>(null);
+  user = signal<User | null>(null);
   tempUser;
-  userName = this.user()?._id || 'Unknown User';
   constructor(
     private route: ActivatedRoute,
     private httpClient: HttpClient,
@@ -72,36 +44,52 @@ export class GameComponent implements OnInit {
     private lobbyService: LobbyService,
     private router: Router,
   ) {
-    this.LlobbyService.getLobbyById(this.lobbyId).subscribe(
+    console.log("auoduoawdguioawguiodg");
+    this.LobbyService.getUserById(this.route.snapshot.params['uid']).subscribe(
       (response) => {
-        this.LobbySignal.set(response);
+        console.log(response._id);
+        this.user.set(response);
+      });
+    this.LobbyService.getLobbyById(this.route.snapshot.params['id']).subscribe(
+      (response) => {
+        console.log("auoduoawdguioawguiodg");
+        console.log(response._id);
+        this.game.set(response);
       });
 
     this.webSocketService.getMessage().subscribe((message: unknown) => {
       const msg = message as {
         type?: string;
         lobbyId?: string;
-        playerName?: string;
+        userName?: string;
       };
       // This comment and much of how the websockets stuff works comes from
       // https://github.com/UMM-CSci-3601-F24/it-3-mary-shellys-cool-1918-howard-frankendogs-football-team/tree/main
       // "all of these are optional to allow heartbeat messages to pass through",
       // but I (KK) haven't done anything with heartbeat stuff yet... apparently it helps keep things connected
 
-      if (this.LobbySignal()) { // only update a game if this component has a game object already in view
+      if (this.game()) { // only update a game if this component has a game object already in view
         if (
         // The websocket message is about adding a player and refers to
         // the game this GameComponent is displaying
           msg.type === 'ADD_PLAYER' &&
           msg.lobbyId === this.lobbyId
         ) {
-          // console.log("client received broadcast for game: " + msg.gameId + " to add: " + msg.playerName);
-          this.LobbySignal.update(currentLobby => ({...currentLobby, userIDs: [...currentLobby.userIDs, msg.playerName+" (joined) "] }));
-          // console.log("GameComponent: " + this + " added player: " + msg.playerName);
+          console.log(msg.userName);
+          console.log("client received broadcast for game: " + msg.userName+ " to add: " + msg.lobbyId);
+          this.LobbyService.getUserById(msg.userName).subscribe(
+            (response) => {
+              console.log(response._id);
+              this.user.set(response);
+            });
+          this.userNames().set(msg.userName, this.user().userName);
+          console.log(this.userNames().get(msg.userName));
+          this.game.update(currentLobby => ({...currentLobby, userIDs: [...currentLobby.userIDs, this.lobbyId] }));
+          console.log("GameComponent: " + this.game + " added player: " + msg.userName);
           //
           // Google Generative AI with prompt/search: "angular 19 update a property of a signal where the
           // property is an array, without changing the object directly"
-          //
+          // implementation that could cause it not to work as expected. Here are some areas to investigate and suggestions for debugging:
           // told me: The update method receives the current value of the signal.
           // A new object is then created, with the players array being replaced by a new array.
           // This new array is created by spreading the old array and adding a new element,
@@ -142,7 +130,6 @@ export class GameComponent implements OnInit {
       }
     });
 
-    this.userName = this.user()?._id || 'Unknown User';
   }
 
   fetchRound() {
@@ -160,7 +147,9 @@ export class GameComponent implements OnInit {
   }
 
   fetchUserName(id: string): string {
+    if(id == 'Unknown User') {
+      console.log(id);
+    }
     return this.userNames().get(id) || 'Unknown User';
-    return this.tempUser.lobbyName
   }
 }
